@@ -14,3 +14,6 @@ Cargo.lock
 
 # Mac OS problems
 .DS_Store
+
+# Ignore xCode project file
+*.xcodeproj
