@@ -3,7 +3,6 @@ LD := x86_64-elf-ld
 LD_FLAGS := --oformat binary -b binary
 
 kernel := build/kernel-$(arch).bin
-linker_script := src/arch/$(arch)/linker.ld
 assembly_source_files := src/arch/$(arch)/boot.asm #$(wildcard src/arch/$(arch)/*.s)
 assembly_object_files := $(patsubst src/arch/$(arch)/%.asm, build/arch/$(arch)/%.o, $(assembly_source_files))
 
@@ -11,8 +10,8 @@ assembly_object_files := $(patsubst src/arch/$(arch)/%.asm, build/arch/$(arch)/%
 
 all: $(kernel) run
 
-$(kernel): $(assembly_object_files) $(linker_script)
-	@$(LD) $(LD_FLAGS) -T $(linker_script) -o $@ $(assembly_object_files)
+$(kernel): $(assembly_object_files)
+	@$(LD) $(LD_FLAGS) -o $@ $(assembly_object_files)
 
 run: $(kernel)
 	@qemu-system-$(arch) $<
