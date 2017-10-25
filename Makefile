@@ -3,7 +3,7 @@ LD := x86_64-elf-ld
 LD_FLAGS := --oformat binary -b binary
 
 kernel := build/kernel-$(arch).bin
-assembly_source_files := src/arch/$(arch)/boot.asm #$(wildcard src/arch/$(arch)/*.s)
+assembly_source_files := src/arch/$(arch)/boot.asm # $(wildcard src/arch/$(arch)/*.asm)
 assembly_object_files := $(patsubst src/arch/$(arch)/%.asm, build/arch/$(arch)/%.o, $(assembly_source_files))
 
 .PHONY: all run clean
@@ -21,5 +21,5 @@ clean:
 
 build/arch/$(arch)/%.o: src/arch/$(arch)/%.asm
 	@mkdir -p $(dir $@)
-	@nasm -f bin -o $@ -i $(dir $<) $<
+	@nasm -f bin -oO -o $@ -i $(dir $<) $<
 
