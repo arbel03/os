@@ -1,14 +1,15 @@
-ENTRY(header_start)
+ENTRY(start)
 
 SECTIONS {
-    .text : AT(0x7c00)
+    . = 1M;
+
+    .boot :
     {
-        KEEP(*(.mbr_header))
-        *(.text)
+        KEEP(*(.multiboot_header))
     }
 
-    .data :
+    .text :
     {
-        *(.rodata)
+        *(.text)
     }
 }

@@ -1,74 +1,35 @@
-global header_start
-extern protected_mode_start
+global start
 
-section .mbr_header
-bits 16
-header_start:
-	; Setting up a stack
-	mov bp, 0x2000
-	mov sp, bp
+section .text
+bits 32
+start:
+	mov esp, stack_top
 
-	mov bx, LOAD_DISK_MESSAGE
-	call print_string
-
-	mov bx, 0x9000
-	mov dh, 1
-	call disk_load
-
-	; Switching to pmode
-	call switch_to_pm
-
-	jmp $
-	
-switch_to_pm:
-	cli
 	lgdt [gdt32.pointer]
 
-	; Enter protected mode
-	mov eax, cr0
-	or eax, 1
-	mov cr0, eax
-
 	mov ax, gdt32.data
-	jmp gdt32.code:protected_mode_start
-	ret
+    mov ss, ax
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+	jmp gdt32.code:flush
+	
+flush:
+	; Call the rust kernel
+	extern rust_main
+    call rust_main
 
-print_string:
-	mov ah, 0x0e
-print_char:
-	mov al, byte [bx]
-	cmp al, 0
-	je end
-	int 0x10
-	inc bx
-	jmp print_char
-end:
-	ret
+	mov dword [0xb8000], 0x2f4b2f4f
 
-disk_load:
-	push dx
-
-	mov ah, 0x02 ; BIOS read sector function
-	mov al, dh ; Read dh sectors
-	mov ch, 0x00 ; Cylinder 0
-	mov dh, 0x00 ; Select head 0
-	mov cl, 0x02 ; Start reading from second sector (after mbr)
-	int 0x13
-	jc disk_error
-
-	pop dx
-	cmp dh, al ; if al (sectors read) != dh (sectors expected)
-	jne disk_error
-	ret
-disk_error:
-	mov bx, DISK_ERROR_MSG
-	call print_string
 	jmp $
 
-; Variables
-DISK_ERROR_MSG: db 'Disk read error.', 10, 13, 0
-LOAD_DISK_MESSAGE: db "Loading sectors from disk.", 10, 13, 0
+section .bss
+stack_bottom:
+	resb 64
+stack_top:
 
+section .rodata
 gdt32:
 	dd 0x0
 	dd 0x0
@@ -93,8 +54,3 @@ gdt32:
 .pointer:
 	dw $ - gdt32 - 1 ;Size
 	dd gdt32 ;Start address of the gdt
-
-	; Padding
-	times 510-($-$$) db 0
-	dw 0xAA55
-header_end:

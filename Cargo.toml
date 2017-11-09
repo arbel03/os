@@ -5,3 +5,6 @@ authors = ["Arbel Israeli <arbel03@gmail.com>"]
 
 [lib]
 crate-type = ["staticlib"]
+
+[dependencies]
+rlibc = "1.0"

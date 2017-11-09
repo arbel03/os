@@ -6,5 +6,8 @@
     "target-pointer-width": "32",
     "target-c-int-width": "32",
     "arch": "x86",
-    "os": "node"
+    "os": "none",
+    "disable-redzone": true,
+    "features": "-mmx,-sse,+soft-float",
+    "panic-strategy": "abort"
 }
