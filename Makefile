@@ -13,7 +13,7 @@ kernel := build/kernel-$(arch).bin
 iso := build/os-$(arch).iso
 grub_cfg := src/arch/$(arch)/grub.cfg
 
-.PHONY: all clean run iso kernel
+.PHONY: all clean run iso kernel debug
 
 all: $(kernel) run
  
@@ -24,7 +24,13 @@ kernel:
 	@xargo build --target $(target)
 
 run: $(iso)
-	@qemu-system-i386 -cdrom $(iso)
+	@qemu-system-i386 -cdrom $(iso) -s
+
+debug: $(iso)
+	@qemu-system-i386 -cdrom $(iso) -s -S
+
+gdb:
+	gdb "build/kernel-$(arch).bin" -ex "target remote :1234" 
 
 iso: $(iso)
 
