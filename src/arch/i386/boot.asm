@@ -3,30 +3,26 @@ global start
 section .text
 bits 32
 start:
-	mov esp, stack_top
-
 	lgdt [gdt32.pointer]
+	call gdt32.code:protected_mode_start
+	hlt
 
+protected_mode_start:
 	mov ax, gdt32.data
 	mov ss, ax
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
 	mov gs, ax
-	jmp gdt32.code:flush	
-flush:
+
+	; Loading stack at the end of memory
+	mov esp, 0xffff
+	mov ebp, esp
+
 	; Call the rust kernel
 	extern rust_main
 	call rust_main
-
-	mov dword [0xb8000], 0x2f4b2f4f
-
-	jmp $
-
-section .bss
-stack_bottom:
-	resb 128
-stack_top:
+	ret
 
 section .rodata
 gdt32:
