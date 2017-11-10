@@ -6,10 +6,11 @@
 	"target-c-int-width": "32",
 	"os": "none",
 	"arch": "x86",
-		"linker-flavor": "ld",
-		"pre-link-args": ["-m32"],
-		"no-compiler-rt": true,
-		"eliminate-frame-pointer": false,
-	"morestack": false,
-  	"panic-strategy": "abort"
+	"linker-flavor": "ld",
+	"pre-link-args": ["-m32"],
+	"no-compiler-rt": true,
+	"eliminate-frame-pointer": false,		
+	"disable-redzone": true,
+  	"features": "-sse,+soft-float",
+	"panic-strategy": "abort"
 }
