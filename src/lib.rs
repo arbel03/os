@@ -18,8 +18,8 @@ pub extern fn rust_main() {
     println!("Hello World{}", "!");
     println!("{} + {} = {}", 1, 2, 1+2);
 
-    loop{}
+    println!("{:?}", gdt::create_descriptor(0, 0, 0));
 }
 
 #[lang = "eh_personality"] extern fn eh_personality() {}
-#[lang = "panic_fmt"] #[no_mangle] pub extern fn panic_fmt() -> ! {loop{}}
+#[lang = "panic_fmt"] #[no_mangle] pub extern fn panic_fmt() -> ! { loop{} }
