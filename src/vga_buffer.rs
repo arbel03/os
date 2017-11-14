@@ -1,5 +1,6 @@
 use core::ptr::Unique;
 use core::fmt;
+use spin::Mutex;
 
 #[allow(dead_code)]
 #[repr(u8)]
@@ -73,12 +74,6 @@ impl Writer {
         }
     }
 
-    pub fn write_str(&mut self, s: &str) {
-        for byte in s.bytes() {
-            self.write_byte(byte)
-        }
-    }
-
     fn buffer(&mut self) -> &mut Buffer {
         unsafe{ self.buffer.as_mut() }
     }
@@ -115,17 +110,27 @@ impl fmt::Write for Writer {
     }
 }
 
-pub static WRITER: Writer = Writer {
-        column_position: 0,
-        color_code: ColorCode::new(Color::LightGray, Color::Black),
-        buffer: unsafe { Unique::new_unchecked(0xb8000 as *mut _) },
-    };
+pub static WRITER: Mutex<Writer> = Mutex::new(Writer {
+    column_position: 0,
+    color_code: ColorCode::new(Color::LightGreen, Color::Black),
+    buffer: unsafe { Unique::new_unchecked(0xb8000 as *mut _) },
+});
 
-pub fn print_something() {
-    use core::fmt::Write;
-    
-    // FIXME: Add mutex
-    //WRITER.write_byte(b'H');
-    //WRITER.write_str("ello!\n");
-    //write!(WRITER, "The numbers are {} and {}", 42, 2).expect("Can't Print.");
+macro_rules! println {
+    ($fmt:expr) => (print!(concat!($fmt, "\n")));
+    ($fmt:expr, $($arg:tt)*) => (print!(concat!($fmt, "\n"), $($arg)*));
+}
+
+macro_rules! print {
+    ($($arg:tt)*) => ({
+        use core::fmt::Write;
+        let mut writer = $crate::vga_buffer::WRITER.lock();
+        writer.write_fmt(format_args!($($arg)*)).unwrap();
+    });
+}
+
+pub fn clear_screen() {
+    for _ in 0..BUFFER_HEIGHT {
+        println!("");
+    }
 }
