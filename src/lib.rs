@@ -3,9 +3,11 @@
 #![feature(unique)]
 #![feature(const_unique_new)]
 #![no_std]
+#![feature(compiler_builtins_lib)]
 
 extern crate rlibc;
 extern crate spin;
+extern crate compiler_builtins;
 
 #[macro_use]
 mod vga_buffer;
@@ -18,7 +20,10 @@ pub extern fn rust_main() {
     println!("Hello World{}", "!");
     println!("{} + {} = {}", 1, 2, 1+2);
 
-    println!("{:?}", gdt::create_descriptor(0, 0, 0));
+    match gdt::add_descriptor() {
+        Ok(descriptor) => println!("{:?}", descriptor),
+        Err(err) => println!("{}", err),
+    }
 }
 
 #[lang = "eh_personality"] extern fn eh_personality() {}
