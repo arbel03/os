@@ -18,7 +18,7 @@ grub_cfg := src/arch/$(arch)/grub.cfg
 all: $(kernel) run
  
 $(kernel): kernel $(rust_os) $(assembly_object_files) $(linker_script)
-	@ld -n --gc-sections -m elf_i386 -T $(linker_script) -o $@ $(assembly_object_files) $(rust_os)
+	@i386-elf-ld -n --gc-sections -m elf_i386 -T $(linker_script) -o $@ $(assembly_object_files) $(rust_os)
 
 kernel:
 	@xargo build --target $(target)
