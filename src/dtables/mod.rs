@@ -24,21 +24,30 @@
 // 	dw $ - gdt32 - 1 ;Size
 // 	dd gdt32 ;Start address of the gdt
 
-pub mod Descriptors;
-use self::Descriptors::*;
+
+pub mod ldt;
+use self::ldt::SegmentDescriptor;
+use core::mem;
 
 #[repr(C)]
-struct GDTPointer(u16, u32);
-
-#[repr(C)]
-struct GDT {
-    descriptors: &'static [GDTDescriptor],
-    pointer: GDTPointer,
+pub struct TablePointer<Descriptor> { 
+    limit: u16, // Size of the table
+    ptr: *const Descriptor, // pointer
 }
 
-//static mut GDTTable: [GDTDescriptor] = [create_descriptor(0,0,0)];
+impl<T> TablePointer<T> {
+    pub fn new(table: &[T]) -> Self {
+        let size = mem::size_of::<T>() * table.len() - 1;
 
-pub fn add_descriptor() -> Result<GDTDescriptor, &'static str> {
-    let descriptor = GDTDescriptor::new(0, 0, 0);
-    return Ok(descriptor);
+        TablePointer {
+            limit: size as u16,
+            ptr: table.as_ptr(),
+        }
+    }
+}
+
+pub fn lldt(gdt: &TablePointer<SegmentDescriptor>) {
+    unsafe {        
+        asm!("lldt [$0]" :: "r"(gdt) :: "intel", "volatile");
+    }
 }
