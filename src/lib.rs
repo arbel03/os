@@ -15,6 +15,7 @@ extern crate compiler_builtins;
 mod vga_buffer;
 pub mod dtables;
 mod interrupts;
+mod memory;
 
 #[no_mangle]
 pub extern fn kmain() {
@@ -22,6 +23,7 @@ pub extern fn kmain() {
     println!("Hello World{}", "!");
 
     interrupts::init();
+    memory::init();
 }
 
 #[lang = "eh_personality"] extern fn eh_personality() {}

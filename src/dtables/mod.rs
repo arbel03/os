@@ -1,28 +1,29 @@
-pub mod ldt;
-pub mod idt;
+pub mod Interrupts;
+pub mod Segmentation;
 use core::mem;
 
-#[repr(C)]
-pub struct TablePointer { 
+#[repr(C, packed)]
+pub struct TableDescriptor { 
     pub limit: u16, // Size of the table
     pub ptr: u32, // pointer
 }
 
-impl TablePointer {
+impl TableDescriptor {
     pub fn new<T>(table: &[T]) -> Self {
         let size = mem::size_of::<T>() * table.len() - 1;
 
-        TablePointer {
+        TableDescriptor {
             limit: size as u16,
             ptr: table.as_ptr() as u32,
         }
     }
 }
 
-pub unsafe fn lldt(gdt_pointer: &TablePointer) {
-    asm!("lldt [$0]" :: "r"(gdt_pointer as *const _) :: "intel", "volatile");
+pub unsafe fn lgdt(gdt: &TableDescriptor) {
+    asm!("lgdt [$0]" :: "r"(gdt) : "memory" : "intel");
 }
 
-pub unsafe fn lidt(idt: &TablePointer) {
-    asm!("lidt ($0)" :: "r" (idt) : "memory");
+#[inline(always)]
+pub unsafe fn lidt(idt: &TableDescriptor) {
+    asm!("lidt [$0]" :: "r"(idt) : "memory" : "intel");
 }
