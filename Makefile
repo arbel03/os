@@ -1,50 +1,31 @@
-arch ?= i386
-target ?= $(arch)-sos
+rust_os := target/i386-sos/debug/libsos.a
 
-linker_script := src/arch/$(arch)/linker.ld
+assembly_source_files := $(wildcard src/boot/*.asm)
+assembly_object_files := $(patsubst src/boot/%.asm, \
+	build/boot/%.o, $(assembly_source_files))
 
-rust_os := target/$(target)/debug/libsos.a
+iso := build/os.iso
+kernel := build/kernel.bin
 
-assembly_source_files := $(wildcard src/arch/$(arch)/*.asm)
-assembly_object_files := $(patsubst src/arch/$(arch)/%.asm, \
-	build/arch/$(arch)/%.o, $(assembly_source_files))
+.PHONY: clean all run
 
-kernel := build/kernel-$(arch).bin
-iso := build/os-$(arch).iso
-grub_cfg := src/arch/$(arch)/grub.cfg
-
-.PHONY: all clean run iso kernel debug
-
-all: $(kernel) run
- 
-$(kernel): kernel $(rust_os) $(assembly_object_files) $(linker_script)
-	@i386-elf-ld -n --gc-sections -m elf_i386 -T $(linker_script) -o $@ $(assembly_object_files) $(rust_os)
-
-kernel:
-	@xargo build --target $(target)
+all: $(iso) run
 
 run: $(iso)
-	@qemu-system-i386 -cdrom $(iso) -s
+	@qemu-system-i386 -drive file=$<,format=raw
 
-debug: $(iso)
-	@qemu-system-i386 -cdrom $(iso) -s -S
+$(kernel): $(rust_os) $(assembly_object_files)
+	@i386-elf-ld -n --gc-sections -m elf_i386 -T linker.ld -o $@ $(assembly_object_files) $(rust_os)
 
-gdb:
-	gdb "build/kernel-$(arch).bin" -ex "target remote :1234" 
-
-iso: $(iso)
-
-$(iso): $(kernel) $(grub_cfg)
-	@mkdir -p build/isofiles/boot/grub
-	@cp $(kernel) build/isofiles/boot/kernel.bin
-	@cp $(grub_cfg) build/isofiles/boot/grub
-	@grub-mkrescue -o $(iso) build/isofiles 2> /dev/null
-	@rm -R build/isofiles
+$(rust_os):
+	@xargo build --target i386-sos
 
 clean:
 	@rm -rf build
 	@rm -rf target
 
-build/arch/$(arch)/%.o: src/arch/$(arch)/%.asm
+build/boot/%.o: src/boot/%.asm
 	@mkdir -p $(dir $@)
 	@nasm -f elf32 -o $@ $<
+
+include bootloader/Makefile
