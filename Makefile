@@ -9,7 +9,7 @@ kernel := build/kernel.bin
 
 .PHONY: clean all run
 
-all: $(iso) run
+all: clean $(iso) run
 
 run: $(iso)
 	@qemu-system-i386 -drive file=$<,format=raw
@@ -22,7 +22,6 @@ $(rust_os):
 
 clean:
 	@rm -rf build
-	@rm -rf target
 
 build/boot/%.o: src/boot/%.asm
 	@mkdir -p $(dir $@)
