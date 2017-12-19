@@ -1,3 +1,4 @@
 [submodule "bootloader"]
 	path = bootloader
-	url = https://github.com/arbel03/bootloader
+	url = https://github.com/arbel03/bootloader.git
+	branch = master
