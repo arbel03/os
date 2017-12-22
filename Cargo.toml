@@ -9,4 +9,6 @@ crate-type = ["staticlib"]
 [dependencies]
 rlibc = "1.0"
 spin = "0.4.5"
-compiler_builtins = { git = "https://github.com/rust-lang-nursery/compiler-builtins" }
+
+[dependencies.compiler_builtins]
+path = "/home/arbel03/.rustup/toolchains/nightly-i686-unknown-linux-gnu/lib/rustlib/src/rust/src/libcompiler_builtins"

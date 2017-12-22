@@ -19,7 +19,7 @@ mod memory;
 
 #[no_mangle]
 pub extern fn kmain() {
-    vga_buffer::clear_screen();
+    //vga_buffer::clear_screen();
     println!("Hello World{}", "!");
 
     interrupts::init();

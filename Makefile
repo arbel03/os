@@ -15,13 +15,14 @@ run: $(iso)
 	@qemu-system-i386 -drive file=$<,format=raw
 
 $(kernel): $(rust_os) $(assembly_object_files)
-	@i386-elf-ld -n --gc-sections -m elf_i386 -T linker.ld -o $@ $(assembly_object_files) $(rust_os)
+	@ld -n --gc-sections -m elf_i386 -T linker.ld -o $@ $(assembly_object_files) $(rust_os)
 
 $(rust_os):
 	@xargo build --target i386-sos
 
 clean:
 	@rm -rf build
+	@rm -rf target
 
 build/boot/%.o: src/boot/%.asm
 	@mkdir -p $(dir $@)
