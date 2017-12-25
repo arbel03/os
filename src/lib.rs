@@ -18,9 +18,9 @@ mod interrupts;
 mod memory;
 
 #[no_mangle]
-pub extern fn kmain() {
-    //vga_buffer::clear_screen();
-    println!("Hello World{}", "!");
+pub extern fn kmain(free_address_start: usize) {
+    vga_buffer::clear_screen();
+    println!("free_address_start: 0x{:x}", free_address_start);
 
     interrupts::init();
     memory::init();

@@ -7,6 +7,7 @@ start:
 	mov esp, 0x90000
 	mov ebp, esp
 
+	push edi
 	extern kmain
 	call kmain
 	hlt
