@@ -17,7 +17,6 @@ pub fn init() {
 }
 
 extern "x86-interrupt" fn breakpoint_handler(stack_frame: &ExceptionStackFrame) {
-    println!("Exception!: Breakpoint");
-    println!("Info: {:?}", stack_frame);
+    println!("\nBreakpoint Exception! Info: \n{}\n", stack_frame);
 }
 

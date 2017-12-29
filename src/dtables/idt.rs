@@ -1,4 +1,5 @@
 // Example: https://github.com/gz/rust-x86/blob/master/src/bits32/irq.rs
+use core::fmt;
 
 #[allow(dead_code)]
 #[repr(u8)]
@@ -26,13 +27,24 @@ pub struct IdtEntry {
     base_high: u16 // Higher address of the ISR
 }
 
-#[derive(Debug)]
 pub struct ExceptionStackFrame {
     pub instruction_pointer: u32,
     pub code_segment: u32,
     pub cpu_flags: u32,
     pub stack_pointer: u32,
     pub stack_segment: u32,
+}
+
+impl fmt::Display for ExceptionStackFrame {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "instruction_pointer:0x{:x}\ncode_segment:0x{:x}\ncpu_flags:0x{:x}\nstack_pointer:0x{:x}\nstack_segment:0x{:x}",
+        self.instruction_pointer,
+        self.code_segment, 
+        self.cpu_flags, 
+        self.stack_pointer, 
+        self.stack_segment);
+        Ok(())
+    }
 }
 
 impl IdtEntry {
