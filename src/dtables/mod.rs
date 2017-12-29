@@ -1,5 +1,5 @@
-pub mod Interrupts;
-pub mod Segmentation;
+pub mod idt;
+pub mod memory;
 use core::mem;
 
 #[repr(C, packed)]

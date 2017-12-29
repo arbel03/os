@@ -1,24 +1,23 @@
-use dtables::Interrupts::*;
-use dtables::TableDescriptor;
-use dtables::lidt;
+use dtables::idt::{IdtEntry, ExceptionStackFrame};
+use dtables::{TableDescriptor, lidt};
 
 static mut IDT: [IdtEntry; 256] = [IdtEntry::MISSING; 256];
 
 pub fn init() {
     unsafe {
-        let IDTR = TableDescriptor::new(&IDT);
-        lidt(&IDTR);
+        let idtr = TableDescriptor::new(&IDT);
+        lidt(&idtr);
 
         IDT[3] = IdtEntry::new(breakpoint_handler as u32);
         
         // TODO: Fix triple fault
         // http://wiki.osdev.org/I_Can't_Get_Interrupts_Working
-        //asm!("int 3" :::: "intel");
+        asm!("int 3" :::: "intel");
     }
 }
 
-extern "C" fn breakpoint_handler() {
+extern "x86-interrupt" fn breakpoint_handler(stack_frame: &ExceptionStackFrame) {
     println!("Exception!: Breakpoint");
-    loop {}
+    println!("Info: {:?}", stack_frame);
 }
 

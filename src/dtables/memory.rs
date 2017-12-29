@@ -1,5 +1,3 @@
-use core::fmt;
-
 #[repr(packed, C)]
 #[derive(Clone, Copy, Debug)]
 pub struct SegmentDescriptor {

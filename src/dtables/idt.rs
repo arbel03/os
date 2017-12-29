@@ -26,7 +26,15 @@ pub struct IdtEntry {
     base_high: u16 // Higher address of the ISR
 }
 
-// TODO: Implement generic new functions to link ISR
+#[derive(Debug)]
+pub struct ExceptionStackFrame {
+    pub instruction_pointer: u32,
+    pub code_segment: u32,
+    pub cpu_flags: u32,
+    pub stack_pointer: u32,
+    pub stack_segment: u32,
+}
+
 impl IdtEntry {
     pub const MISSING: IdtEntry = IdtEntry {
         base_low: 0,
@@ -40,7 +48,7 @@ impl IdtEntry {
         let base_low = (isr & 0xFFFF) as u16;
         let selector: u16 = 0x08; // My code segment
         let zero: u8 = 0;
-        let flags: u8 = Flags::Present as u8 | Flags::DPL0 as u8 | Flags::GateInterrupt32 as u8;
+        let flags: u8 = Flags::Present as u8 | Flags::DPL3 as u8 | Flags::GateInterrupt32 as u8;
         let base_high: u16 = ((isr >> 16) & 0xFFFF) as u16;
 
         IdtEntry {
