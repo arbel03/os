@@ -9,7 +9,6 @@
 
 extern crate rlibc;
 extern crate spin;
-extern crate compiler_builtins;
 
 #[macro_use]
 mod vga_buffer;
@@ -26,5 +25,7 @@ pub extern fn kmain(free_address_start: usize) {
     memory::init();
 }
 
+// #[no_mangle] pub extern "C" fn __udivdi3() { loop {} }
+// #[no_mangle] pub extern "C" fn __umoddi3() { loop {} }
 #[lang = "eh_personality"] extern fn eh_personality() {}
 #[lang = "panic_fmt"] #[no_mangle] pub extern fn panic_fmt() -> ! { loop{} }

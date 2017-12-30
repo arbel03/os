@@ -15,7 +15,7 @@ run: $(iso)
 	@qemu-system-i386 -drive file=$<,format=raw
 
 $(kernel): cargo $(rust_os) $(assembly_object_files)
-	@ld -n --gc-sections -m elf_i386 -T linker.ld -o $@ $(assembly_object_files) $(rust_os)
+	@i386-elf-ld -n --gc-sections -m elf_i386 -T linker.ld -o $@ $(assembly_object_files) $(rust_os)
 
 cargo:
 	@xargo build --target i386-sos
