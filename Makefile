@@ -1,8 +1,8 @@
 rust_os := target/i386-sos/debug/libsos.a
 
-assembly_source_files := $(wildcard src/boot/*.asm)
-assembly_object_files := $(patsubst src/boot/%.asm, \
-	build/boot/%.o, $(assembly_source_files))
+assembly_source_files := $(wildcard src/arch/*.asm)
+assembly_object_files := $(patsubst src/arch/%.asm, \
+	build/arch/%.o, $(assembly_source_files))
 
 iso := build/os.iso
 kernel := build/kernel.bin
@@ -23,7 +23,7 @@ cargo:
 clean:
 	@rm -rf build
 
-build/boot/%.o: src/boot/%.asm
+build/arch/%.o: src/arch/%.asm
 	@mkdir -p $(dir $@)
 	@nasm -f elf32 -o $@ $<
 
