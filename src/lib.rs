@@ -13,6 +13,7 @@ extern crate spin;
 #[macro_use]
 mod vga_buffer;
 mod dtables;
+mod drivers;
 mod interrupts;
 mod memory;
 
@@ -23,22 +24,6 @@ pub extern fn kmain(free_address_start: usize) {
 
     interrupts::init();
     memory::init();
-}
-
-#[inline]
-pub fn inb(port: u16) -> u8 {
-    unsafe {
-        let byte: u8;
-        asm!("in al, dx" : "={al}"(byte) : "{dx}"(port) :: "intel", "volatile");
-        byte
-    }
-}
-
-#[inline]
-pub fn outb(port: u16, byte: u8) {
-    unsafe {
-        asm!("out dx, al" :: "{al}"(byte), "{dx}"(port) :: "intel", "volatile");
-    }
 }
 
 // #[no_mangle] pub extern "C" fn __udivdi3() { loop {} }

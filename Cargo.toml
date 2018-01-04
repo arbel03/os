@@ -3,6 +3,9 @@ name = "sos"
 version = "0.0.0"
 authors = ["Arbel Israeli <arbel03@gmail.com>"]
 
+[profile.dev]
+panic = "abort"
+
 [lib]
 crate-type = ["staticlib"]
 

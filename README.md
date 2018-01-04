@@ -5,7 +5,7 @@
 
 ### Install Rust
 Install rustup from https://www.rustup.rs
-Or by using the folliwing command: 
+Or by using the following command: 
 `curl https://sh.rustup.rs -sSf | sh`
 
 ### Configure Rust

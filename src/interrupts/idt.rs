@@ -37,12 +37,13 @@ pub struct ExceptionStackFrame {
 
 impl fmt::Display for ExceptionStackFrame {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "instruction_pointer:0x{:x}\ncode_segment:0x{:x}\ncpu_flags:0x{:x}\nstack_pointer:0x{:x}\nstack_segment:0x{:x}",
-        self.instruction_pointer,
-        self.code_segment, 
-        self.cpu_flags, 
-        self.stack_pointer, 
-        self.stack_segment)
+        write!(f, "ExceptionStackFrame {{\n");
+        write!(f, "    Instruction Pointer: {:#x}\n", &self.instruction_pointer);
+        write!(f, "    Code Segment: {:#x}\n", &self.code_segment);
+        write!(f, "    CPU Flags: {:x}\n", &self.cpu_flags);
+        write!(f, "    Stack Pointer: {:x}\n", &self.stack_pointer);
+        write!(f, "    Stack Segment: {:x}\n", &self.stack_segment);
+        write!(f, "}}")
     }
 }
 
