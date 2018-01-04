@@ -1,16 +1,13 @@
 {
 	"data-layout": "e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128",
-	"llvm-target": "i386-unknown-none",
+	"llvm-target": "i686-unknown-linux-gnu",
 	"target-endian": "little",
 	"target-pointer-width": "32",
 	"target-c-int-width": "32",
-	"os": "none",
 	"arch": "x86",
-	"linker-flavor": "ld",
-	"pre-link-args": ["-m32"],
-	"no-compiler-rt": true,
-	"eliminate-frame-pointer": false,		
+	"os": "none",
+	"linker-flavor": "gcc",
 	"disable-redzone": true,
-  	"features": "-sse,+soft-float",
+  	"features": "-sse,-mmx,+soft-float",
 	"panic-strategy": "abort"
 }

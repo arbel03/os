@@ -19,7 +19,7 @@ $(kernel): cargo $(rust_os) $(assembly_object_files)
 	@i386-elf-ld -n --gc-sections -m elf_i386 -T linker.ld -o $@ $(assembly_object_files) $(rust_os)
 
 cargo:
-	@xargo build --target=$(target)
+	@xargo build --target $(target) --verbose
 
 clean:
 	@rm -rf build
