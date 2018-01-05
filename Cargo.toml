@@ -2,6 +2,7 @@
 name = "sos"
 version = "0.0.0"
 authors = ["Arbel Israeli <arbel03@gmail.com>"]
+exclude = ["src/arch/*.asm"]
 
 [lib]
 crate-type = ["staticlib"]
