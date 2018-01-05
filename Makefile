@@ -23,6 +23,7 @@ cargo:
 
 clean:
 	@rm -rf build
+	@xargo clean
 
 build/arch/%.o: src/arch/%.asm
 	@mkdir -p $(dir $@)

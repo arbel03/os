@@ -1,39 +1,84 @@
 use drivers::utils::*;
 
-static PIC1_COMMAND: u16 = 0x20;
-static PIC1_DATA: u16 = 0x21;
-static PIC2_COMMAND: u16 = 0xA0;
-static PIC2_DATA: u16 = 0xA1;
-
-static INIT_COMMAND: u8 = 0x11;
-static EOI_COMMAND: u8 = 0x20;
-static MODE_8086: u8 = 0x01;
+static PIC1: PIC = PIC::new(0x20, 0x21);
+static PIC2: PIC = PIC::new(0xA0, 0xA1);
 
 // PIC end of interrupt function
-// pub unsafe fn pic_eoi(irq: u8) {
-//     if(irq >= 8) {
-// 		outb(PIC2_COMMAND,EOI_COMMAND);
-//     }
-// 	outb(PIC1_COMMAND,EOI_COMMAND);
-// }
+pub fn send_eoi(slave_irq: bool) {
+    if slave_irq {
+		PIC2.send_eoi(); // send to slave
+    }
+    PIC1.send_eoi(); // send to master- always required
+}
+
+pub struct PIC {
+    command_port: u16,
+    data_port: u16
+}
+
+impl PIC {
+    const fn new(command_port: u16, data_port: u16) -> PIC {
+        PIC { command_port: command_port, data_port: data_port }
+    }
+
+    // This function enables an irq of a certain pic
+    pub fn enable_irq(&self, irq_line: u8) {
+        let irq_line = irq_line % 8;
+        unsafe {
+            let value = inb(self.data_port) & !(1 << irq_line);
+            outb(self.data_port, value);
+        }
+    }
+
+    // This function disables an irq of a certain pic
+    pub fn disable_irq(&self, irq_line: u8) {
+        let irq_line = irq_line % 8;
+        unsafe {
+            let value = inb(self.data_port) | (1 << irq_line);
+            outb(self.data_port, value);
+        }
+    }
+
+    // Sending an end of interrupt command, needed to continue receiving more irqs.
+    pub fn send_eoi(&self) {
+        const EOI_COMMAND: u8 = 0x20;
+        unsafe {
+            outb(self.command_port, EOI_COMMAND);
+        }
+    }
+
+    pub fn init(&self, offset: u8, is_master: bool) {
+        const INIT_COMMAND: u8 = 0x11;
+        const MODE_8086: u8 = 0x01;
+
+        unsafe {
+            // Save mask
+            let mask = inb(self.data_port);
+            // Start initializing pic 1
+            outb(self.command_port, INIT_COMMAND);
+            io_wait();
+
+            // Master PIC vector offset- 32 (the first 32 idt entries are for intel's exceptions)
+            outb(self.data_port, offset);
+            io_wait();
+            // Tell master PIC that there is a slave PIC at IRQ 2
+            outb(self.data_port, if is_master { 4 } else { 2 });
+            io_wait();
+            // Set mode
+            outb(self.data_port, MODE_8086);
+            io_wait();
+            // Restore mask
+            outb(self.data_port, mask); 
+        }
+    }
+}
 
 pub fn configure() {
-    unsafe {
-        let a1 = inb(PIC1_DATA); // mask 1
+    // Initializing master PIC as master
+    PIC1.init(0x20, true);
+    PIC2.init(0x28, false);
 
-        outb(PIC1_COMMAND, INIT_COMMAND); // Start initializing pic 1
-        io_wait();
-
-        // Master PIC vector offset- 32 (the first 32 idt entries are for intel's exceptions)
-        outb(PIC1_DATA, 0x20);
-        io_wait();
-        // Tell master PIC that there is a slave PIC at IRQ 2
-        outb(PIC1_DATA, 4);
-        io_wait();
-        // Set mode
-        outb(PIC1_DATA, MODE_8086);
-        io_wait();
-
-        outb(PIC1_DATA, a1); // restore mask
-    }
+    PIC1.disable_irq(0); // Disable timer for now
+    PIC1.enable_irq(1); // Keyboard
+    PIC1.enable_irq(2); // Slave PIC
 }
