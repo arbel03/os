@@ -11,7 +11,7 @@ pub fn send_eoi(slave_irq: bool) {
     PIC1.send_eoi(); // send to master- always required
 }
 
-pub struct PIC {
+struct PIC {
     command_port: u16,
     data_port: u16
 }

@@ -20,12 +20,15 @@ pub fn init() {
 }
 
 extern "x86-interrupt" fn keyboard_irq(stack_frame: &idt::ExceptionStackFrame) {
-    println!("Key pressed!, code: {}", keyboard::get_scancode());
+    //println!("Key pressed!, code: {}", keyboard::get_scancode());
+    if let Some(c) = keyboard::getc() {
+        print!("{}", c);
+    }
     pic::send_eoi(false);
 }
 
 extern "x86-interrupt" fn double_fault(error_code: u8, stack_frame: &idt::ExceptionStackFrame) {
-    println!("Exception! Double Fault.");
+    println!("Exception! Double Fault.(code {})", error_code);
     println!("{}", stack_frame);
     loop {};
 }

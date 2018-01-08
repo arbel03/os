@@ -17,13 +17,20 @@ mod drivers;
 mod interrupts;
 mod memory;
 
-#[no_mangle]
-pub extern fn kmain(free_address_start: usize) {
-    vga_buffer::clear_screen();
-    println!("free_address_start: 0x{:x}", free_address_start);
+#[derive(Debug, Copy, Clone)]
+#[repr(C, packed)]
+pub struct BootloaderInfo {
+    memory_map_count: u32,
+    memory_map_addr: u32,
+}
 
+#[no_mangle]
+pub extern fn kmain(bootloader_info: &BootloaderInfo) {
+    vga_buffer::clear_screen();
+    println!("Bootloader info: {:?}", bootloader_info);
+
+    memory::init(bootloader_info);
     interrupts::init();
-    memory::init();
 }
 
 // #[no_mangle] pub extern "C" fn __udivdi3() { loop {} }

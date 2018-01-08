@@ -1,5 +1,7 @@
-use dtables::{TableDescriptor, lgdt};
 mod segmentation;
+mod managment;
+use BootloaderInfo;
+use dtables::{TableDescriptor, lgdt};
 use self::segmentation::*;
 
 extern {
@@ -27,7 +29,7 @@ pub unsafe fn encode_entry_at(index: usize, entry: SegmentDescriptor) {
     GDT[index] |= descriptor_low as u64;
 }
 
-pub fn init() {
+pub fn init(bootloader_info: &BootloaderInfo) {
     unsafe {
         let code_segment = SegmentDescriptor::new(0, 0xffffffff, 0x9A, 0xC);
         let data_segment = SegmentDescriptor::new(0, 0xffffffff, 0x92, 0xC);
@@ -41,5 +43,7 @@ pub fn init() {
         gdt_flush();
         println!("GDT Initialized!");
         println!("{:?}\n{:?}", code_segment, data_segment);
+
+        managment::print_memory_map(bootloader_info);
     }
 }
