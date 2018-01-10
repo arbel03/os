@@ -61,14 +61,14 @@ impl IdtEntry {
         base_high: 0,
     };
 
-    pub fn new(isr: u32) -> IdtEntry {
+    pub fn new(isr: u32) -> Self {
         let base_low = (isr & 0xFFFF) as u16;
         let selector: u16 = 0x08; // My code segment
         let zero: u8 = 0;
         let flags: u8 = Flags::Present as u8 | Flags::DPL3 as u8 | Flags::GateInterrupt32 as u8;
         let base_high: u16 = ((isr >> 16) & 0xFFFF) as u16;
 
-        IdtEntry {
+        Self {
             base_low: base_low,
             selector: selector,
             zero: zero,

@@ -1,7 +1,9 @@
+// pub mod heap;
 mod segmentation;
-mod managment;
+//mod memory_map;
+
 use BootloaderInfo;
-use dtables::{TableDescriptor, lgdt};
+//use self::memory_map::MemoryAreaIterator;
 use self::segmentation::*;
 
 extern {
@@ -9,9 +11,9 @@ extern {
 }
 
 // My gdt, containing 8 bytes entries (or unsigned 64 bit values)
-static mut GDT: [u64; 5] = [0; 5];
+static mut GDT: [u64; 8] = [0; 8];
 
-pub unsafe fn encode_entry_at(index: usize, entry: SegmentDescriptor) {
+unsafe fn encode_entry_at(index: usize, entry: SegmentDescriptor) {
     let mut descriptor_high: u32 = 0;
     // Create the high 32 bit segment
     descriptor_high  =  (entry.base & 0x00FF0000) >> 16;
@@ -30,20 +32,29 @@ pub unsafe fn encode_entry_at(index: usize, entry: SegmentDescriptor) {
 }
 
 pub fn init(bootloader_info: &BootloaderInfo) {
+    use dtables::{TableDescriptor, lgdt};
+
     unsafe {
+        // Adding gdt entries
         let code_segment = SegmentDescriptor::new(0, 0xffffffff, 0x9A, 0xC);
         let data_segment = SegmentDescriptor::new(0, 0xffffffff, 0x92, 0xC);
         encode_entry_at(0, SegmentDescriptor::NULL);
         encode_entry_at(1, code_segment);
         encode_entry_at(2, data_segment);
 
+        // Loading gdt
         let gdtr = TableDescriptor::new(&GDT);
         lgdt(&gdtr);
-
         gdt_flush();
-        println!("GDT Initialized!");
-        println!("{:?}\n{:?}", code_segment, data_segment);
 
-        managment::print_memory_map(bootloader_info);
+        println!("Printing GDT");
+        for entry in [code_segment, data_segment].iter() {
+            println!("  {:?}", entry);
+        }
+
+        // let memory_iter = MemoryAreaIterator::new(&bootloader_info, 0x1);
+        // for memory_area in memory_iter {
+        //     println!("base: {:#x}, size: {:#x}", memory_area.base, memory_area.size);
+        // }
     }
 }

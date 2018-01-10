@@ -1,5 +1,4 @@
 use drivers::utils::inb;
-use core::option;
 
 static KEYMAP: [u8; 79] = [
     0, 27,

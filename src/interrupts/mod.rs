@@ -1,14 +1,12 @@
 mod idt;
 use dtables::{TableDescriptor, lidt};
-use drivers::pic;
-use drivers::keyboard;
+use drivers;
 
 static mut IDT: [idt::IdtEntry; 256] = [idt::IdtEntry::MISSING; 256];
 
 pub fn init() {
     unsafe {
-        // Configure hardware interrupts
-        pic::configure();
+        // Enable hardware interrupts
         asm!("sti");
 
         IDT[8] = idt::IdtEntry::new(double_fault as u32);
@@ -20,11 +18,10 @@ pub fn init() {
 }
 
 extern "x86-interrupt" fn keyboard_irq(stack_frame: &idt::ExceptionStackFrame) {
-    //println!("Key pressed!, code: {}", keyboard::get_scancode());
-    if let Some(c) = keyboard::getc() {
+    if let Some(c) = drivers::keyboard::getc() {
         print!("{}", c);
     }
-    pic::send_eoi(false);
+    drivers::send_eoi(false);
 }
 
 extern "x86-interrupt" fn double_fault(error_code: u8, stack_frame: &idt::ExceptionStackFrame) {
