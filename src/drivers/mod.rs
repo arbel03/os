@@ -18,8 +18,8 @@ pub fn configure() {
 
 // PIC end of interrupt function
 pub fn send_eoi(slave_irq: bool) {
+    PIC1.send_eoi(); // send to master- always required
     if slave_irq {
 		PIC2.send_eoi(); // send to slave
     }
-    PIC1.send_eoi(); // send to master- always required
 }

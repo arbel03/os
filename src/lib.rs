@@ -5,12 +5,13 @@
 #![feature(compiler_builtins_lib)]
 #![feature(asm)]
 #![feature(abi_x86_interrupt)]
-// #![feature(alloc)]
-// #![feature(allocator_api)]
-// #![feature(global_allocator)]
+#![feature(alloc)]
+#![feature(allocator_api)]
+#![feature(global_allocator)]
 #![no_std]
 
-// extern crate alloc;
+#[macro_use]
+extern crate alloc;
 extern crate rlibc;
 extern crate spin;
 
@@ -30,27 +31,25 @@ pub struct BootloaderInfo {
     kernel_end: u32,
 }
 
-// use memory::heap::BitmapAllocator;
-//#[global_allocator]
-//static HEAP: BitmapAllocator = BitmapAllocator::new(0, 100);
+use memory::heap::BumpAllocator;
+#[global_allocator]
+static HEAP: BumpAllocator = BumpAllocator::new(0x1000000, 1000*1024);
 
 #[no_mangle]
 pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     vga_buffer::clear_screen();
     println!("Bootloader info: {:?}", bootloader_info);
-
-    memory::init(bootloader_info);
+    
+    memory::init(bootloader_info); 
     drivers::configure();
     interrupts::init();
 }
-
 
 #[lang = "eh_personality"] extern fn eh_personality() { }
 
 #[no_mangle]
 #[lang = "panic_fmt"]
 pub extern fn panic_fmt(fmt: core::fmt::Arguments, file: &'static str, line: u32) -> ! {
-    print!("\n\n\n");
     println!("PANIC in {} at line {}:", file, line);
     println!("{}", fmt);
     loop{}

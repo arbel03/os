@@ -40,9 +40,9 @@ impl fmt::Display for ExceptionStackFrame {
         write!(f, "ExceptionStackFrame {{
     Instruction Pointer: {:#x}
     Code Segment: {:#x}
-    CPU Flags: {:x}
-    Stack Pointer: {:x}
-    Stack Segment: {:x}
+    CPU Flags: {:#x}
+    Stack Pointer: {:#x}
+    Stack Segment: {:#x}
 }}",
             &self.instruction_pointer, 
             &self.code_segment, 

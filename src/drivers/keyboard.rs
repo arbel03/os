@@ -33,22 +33,12 @@ static KEYMAP: [u8; 79] = [
 
 pub fn getc() -> Option<char> {
     let scancode = get_scancode() as usize;
-    if scancode < 79 {
+    if scancode < KEYMAP.len() {
         return Some(KEYMAP[scancode] as char);
     }
     return None;
 }
 
 pub fn get_scancode() -> u8 {
-    let mut c: u8=0;
-    loop {
-        unsafe {
-            if inb(0x60) != c {
-                c = inb(0x60);
-                if c > 0 {
-                    return c;
-                }
-            }
-        }
-    }
+    return unsafe { inb(0x60) };
 }

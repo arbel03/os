@@ -10,22 +10,42 @@ pub fn init() {
         asm!("sti");
 
         IDT[8] = idt::IdtEntry::new(double_fault as u32);
-        IDT[33] = idt::IdtEntry::new(keyboard_irq as u32);       
+        IDT[33] = idt::IdtEntry::new(keyboard_irq as u32); 
+        IDT[5] = idt::IdtEntry::new(bound_range_exceeded as u32);             
+        IDT[13] = idt::IdtEntry::new(general_protection_fault as u32);       
 
         let idtr = TableDescriptor::new(&IDT);
         lidt(&idtr);
     }
 }
 
-extern "x86-interrupt" fn keyboard_irq(stack_frame: &idt::ExceptionStackFrame) {
+extern "x86-interrupt" fn keyboard_irq(_stack_frame: &idt::ExceptionStackFrame) {
     if let Some(c) = drivers::keyboard::getc() {
         print!("{}", c);
     }
     drivers::send_eoi(false);
 }
 
-extern "x86-interrupt" fn double_fault(error_code: u8, stack_frame: &idt::ExceptionStackFrame) {
-    println!("Exception! Double Fault.(code {})", error_code);
+extern "x86-interrupt" fn general_protection_fault(stack_frame: &idt::ExceptionStackFrame, error_code: u32) {
+    println!("Exception! General Protection Fault.");
+    println!("Error code: {:b}", error_code);
+    if error_code != 0 {
+        println!("Error in tbl: {}", (error_code & 6) >> 1);
+        println!("Error in index: {}", error_code >> 3);
+    }
+    println!("{}", stack_frame);
+    loop {};
+}
+
+extern "x86-interrupt" fn bound_range_exceeded(stack_frame: &mut idt::ExceptionStackFrame) {
+    println!("Exception! Bound Range Exceeded.");
+    println!("{}", stack_frame);
+    loop {};
+}
+
+extern "x86-interrupt" fn double_fault(stack_frame: &idt::ExceptionStackFrame, error_code: u32) {
+    println!("Exception! Double Fault.");
+    println!("Error Code: {:b}", error_code);
     println!("{}", stack_frame);
     loop {};
 }

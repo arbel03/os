@@ -1,10 +1,12 @@
-// pub mod heap;
-mod segmentation;
-//mod memory_map;
+pub mod heap;
+pub mod segmentation;
+pub mod memory_map;
 
 use BootloaderInfo;
-//use self::memory_map::MemoryAreaIterator;
+use self::heap::BumpAllocator;
+use self::memory_map::MemoryAreaIterator;
 use self::segmentation::*;
+use dtables::{TableDescriptor, lgdt};
 
 extern {
     fn gdt_flush();
@@ -32,12 +34,11 @@ unsafe fn encode_entry_at(index: usize, entry: SegmentDescriptor) {
 }
 
 pub fn init(bootloader_info: &BootloaderInfo) {
-    use dtables::{TableDescriptor, lgdt};
-
+    // Adding gdt entries
+    let code_segment = SegmentDescriptor::new(0, 0xffffffff, 0x9A, 0xC);
+    let data_segment = SegmentDescriptor::new(0, 0xffffffff, 0x92, 0xC);
+    
     unsafe {
-        // Adding gdt entries
-        let code_segment = SegmentDescriptor::new(0, 0xffffffff, 0x9A, 0xC);
-        let data_segment = SegmentDescriptor::new(0, 0xffffffff, 0x92, 0xC);
         encode_entry_at(0, SegmentDescriptor::NULL);
         encode_entry_at(1, code_segment);
         encode_entry_at(2, data_segment);
@@ -46,15 +47,18 @@ pub fn init(bootloader_info: &BootloaderInfo) {
         let gdtr = TableDescriptor::new(&GDT);
         lgdt(&gdtr);
         gdt_flush();
+    }
 
-        println!("Printing GDT");
-        for entry in [code_segment, data_segment].iter() {
-            println!("  {:?}", entry);
+    println!("Printing GDT");
+    for entry in [code_segment, data_segment].iter() {
+        println!("  {:?}", entry);
+    }
+
+    println!("Printing free memory areas");
+    let memory_iter = MemoryAreaIterator::new(&bootloader_info, 0x1);
+    for memory_area in memory_iter {
+        unsafe {
+            println!("  Start: {:#x}, End: {:#x}, Size: {:#x}", memory_area.base, memory_area.base + memory_area.size, memory_area.size);
         }
-
-        // let memory_iter = MemoryAreaIterator::new(&bootloader_info, 0x1);
-        // for memory_area in memory_iter {
-        //     println!("base: {:#x}, size: {:#x}", memory_area.base, memory_area.size);
-        // }
     }
 }
