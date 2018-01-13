@@ -1,13 +1,16 @@
 use drivers::utils::*;
 
-pub struct PIC {
+pub struct Pic {
     command_port: u16,
     data_port: u16
 }
 
-impl PIC {
-    pub const fn new(command_port: u16, data_port: u16) -> PIC {
-        PIC { command_port: command_port, data_port: data_port }
+impl Pic {
+    pub const MASTER: Pic = Pic::new(0x20, 0x21);
+    pub const SLAVE: Pic = Pic::new(0xA0, 0xA1);
+
+    pub const fn new(command_port: u16, data_port: u16) -> Self {
+        Pic { command_port: command_port, data_port: data_port }
     }
 
     // This function enables an irq of a certain pic

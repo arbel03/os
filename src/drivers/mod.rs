@@ -1,25 +1,27 @@
 mod utils;
 mod pic;
+mod ata;
 pub mod keyboard;
-use self::pic::PIC;
-
-static PIC1: PIC = PIC::new(0x20, 0x21);
-static PIC2: PIC = PIC::new(0xA0, 0xA1);
+use self::pic::Pic;
+use self::ata:: { Ata, Drive };
 
 pub fn configure() {
     // Initializing master PIC as master
-    PIC1.init(0x20, true);
-    PIC2.init(0x28, false);
+    Pic::MASTER.init(0x20, true);
+    Pic::SLAVE.init(0x28, false);
 
-    PIC1.disable_irq(0); // Disable timer for now
-    PIC1.enable_irq(1); // Keyboard
-    PIC1.enable_irq(2); // Slave PIC
+    Pic::MASTER.disable_irq(0); // Disable timer for now
+    Pic::MASTER.enable_irq(1); // Keyboard
+    Pic::MASTER.enable_irq(2); // Slave PIC
+
+    // Setup ATA here.
+    Ata::PRIMARY.identify(Drive::Master);
 }
 
 // PIC end of interrupt function
 pub fn send_eoi(slave_irq: bool) {
-    PIC1.send_eoi(); // send to master- always required
+    Pic::MASTER.send_eoi(); // send to master- always required
     if slave_irq {
-		PIC2.send_eoi(); // send to slave
+		Pic::SLAVE.send_eoi(); // send to slave
     }
 }

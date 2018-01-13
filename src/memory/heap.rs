@@ -1,6 +1,7 @@
 use alloc::heap::{ Alloc, AllocErr, Layout };
 use core::sync::atomic::{ AtomicUsize, Ordering };
 
+// TODO: improve allocator
 pub struct BumpAllocator {
     end: usize,
     current: AtomicUsize,

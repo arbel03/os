@@ -8,6 +8,7 @@
 #![feature(alloc)]
 #![feature(allocator_api)]
 #![feature(global_allocator)]
+#![allow(safe_packed_borrows)]
 #![no_std]
 
 #[macro_use]
@@ -33,12 +34,12 @@ pub struct BootloaderInfo {
 
 use memory::heap::BumpAllocator;
 #[global_allocator]
-static HEAP: BumpAllocator = BumpAllocator::new(0x1000000, 1000*1024);
+static HEAP: BumpAllocator = BumpAllocator::new(0x100000, 0x7ee0000);
 
 #[no_mangle]
 pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     vga_buffer::clear_screen();
-    println!("Bootloader info: {:?}", bootloader_info);
+    println!("Kernel loaded to {:#x}", bootloader_info.kernel_start);
     
     memory::init(bootloader_info); 
     drivers::configure();

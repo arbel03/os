@@ -6,17 +6,23 @@ static mut IDT: [idt::IdtEntry; 256] = [idt::IdtEntry::MISSING; 256];
 
 pub fn init() {
     unsafe {
-        // Enable hardware interrupts
-        asm!("sti");
-
         IDT[8] = idt::IdtEntry::new(double_fault as u32);
         IDT[33] = idt::IdtEntry::new(keyboard_irq as u32); 
         IDT[5] = idt::IdtEntry::new(bound_range_exceeded as u32);             
         IDT[13] = idt::IdtEntry::new(general_protection_fault as u32);       
-
+        IDT[46] = idt::IdtEntry::new(primary_ata_controller as u32);       
+        
         let idtr = TableDescriptor::new(&IDT);
         lidt(&idtr);
+
+        // Enable hardware interrupts
+        asm!("sti");
     }
+}
+
+extern "x86-interrupt" fn primary_ata_controller(_stack_frame: &idt::ExceptionStackFrame) {
+    println!("Primary ATA controller interrupted.");
+    drivers::send_eoi(true);
 }
 
 extern "x86-interrupt" fn keyboard_irq(_stack_frame: &idt::ExceptionStackFrame) {
