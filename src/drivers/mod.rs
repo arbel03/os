@@ -1,9 +1,9 @@
 mod utils;
 mod pic;
 mod ata;
+pub mod disk;
 pub mod keyboard;
 use self::pic::Pic;
-use self::ata:: { Ata, Drive };
 
 pub fn configure() {
     // Initializing master PIC as master
@@ -14,8 +14,8 @@ pub fn configure() {
     Pic::MASTER.enable_irq(1); // Keyboard
     Pic::MASTER.enable_irq(2); // Slave PIC
 
-    // Setup ATA here.
-    Ata::PRIMARY.identify(Drive::Master);
+    // Setup disk
+    disk::init();
 }
 
 // PIC end of interrupt function

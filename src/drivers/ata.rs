@@ -4,29 +4,17 @@
 //      IRQ15
 // Each buss has 2 devices- master and slave
 use drivers::utils::*;
+use drivers::disk::{ DeviceType, Drive, Disk };
+use core::slice;
 
 pub struct Ata {
     control_ports: PortRange,
     status_port: u16,
 }
 
-#[repr(u8)]
-pub enum Drive {
-    Master = 0xA0,
-    Slave = 0xB0,
-}
-
-pub enum DeviceType {
-    Ata,
-    Atapi,
-    Sata,
-    Satapi,
-}
-
-pub struct IdentifyInformation([u16;256]);
-
+#[allow(dead_code)]
 pub enum AtaIdentifyResponse {
-    ValidDevice(IdentifyInformation),
+    ValidDevice,
     InvalidDevice(DeviceType),
     DoesntExist,
 }
@@ -47,6 +35,7 @@ enum RegisterType {
 
 impl Ata {
     pub const PRIMARY: Ata = Ata::new(PortRange::new(0x1F0, 0x1F7), 0x3F6);
+    pub const SECTOR_SIZE: u64 = 512;
 
     pub const fn new(control_ports: PortRange, status_port: u16) -> Self {
         Ata {
@@ -55,28 +44,19 @@ impl Ata {
         }
     }
 
-    fn select_drive(&self, drive: Drive) {
-        self.write_register(RegisterType::Drive, drive as u8);
+    fn write_register(&self, register: RegisterType, value: u8) {
+        unsafe { outb(self.get_port(register), value) }
     }
 
-    fn write_register(&self, register: RegisterType, value: u8) {
-        let port = match register {
+    fn get_port(&self, register: RegisterType) -> u16 {
+        match register {
             RegisterType::Status => self.status_port,
             _ => self.control_ports.get(register as u16),
-        };
-        unsafe {
-            outb(port, value);
         }
     }
 
     fn read_register(&self, register: RegisterType) -> u8 {
-        let port = match register {
-            RegisterType::Status => self.status_port,
-            _ => self.control_ports.get(register as u16),
-        };
-        unsafe { 
-            inb(port) 
-        }
+        unsafe { inb(self.get_port(register)) }
     }
 
     // Reading a single value from the data port
@@ -95,59 +75,55 @@ impl Ata {
             }
         }
     }
+}
 
-    fn get_device_type(mid: u8, high: u8) -> DeviceType {
-        if mid == 0 && high == 0 {
-           return DeviceType::Ata;
+impl Disk for Ata {
+    fn read(&mut self, block: u64, buffer: &mut [u8]) -> Result<u8, &str> {
+        if buffer.len() % 512 != 0 {
+            return Err("Size of buffer and requested read amount doesn't match.");
         }
-        // Return atapi for now
-        DeviceType::Atapi
+        if buffer.len() / 512 > 127 {
+            return Err("Can only read 127 sectors at a time in LBA28 mode.");
+        }
+
+        let sector_count = (buffer.len()/512) as u8;
+        let mut command: u8 = 0xE0;
+        command |= ((block >> 24) & 0x0F) as u8;
+        command |= 0x40; // bit 6 enabled for 28 bit LBA mode.
+        
+        self.write_register(RegisterType::Drive, command);
+        self.write_register(RegisterType::SectorCount, sector_count);
+        self.write_register(RegisterType::LbaLow, block as u8);
+        self.write_register(RegisterType::LbaMid, (block >> 8) as u8);
+        self.write_register(RegisterType::LbaHigh, (block >> 16) as u8);
+        self.write_register(RegisterType::Command, 0x20); // READ SECTORS command
+        for sector in 0..sector_count-1 {
+            // poll until (!Bussy && DataRequestReady) or Error or DriveFault
+            let status = self.poll(RegisterType::Status, |x| (x & 0x80 == 0 && x & 8 != 0) || x & 1 != 0 || x & 0x20 != 0);
+
+            if status & 1 != 0 {
+                // Return amount of read sectors.
+                return Ok(sector);
+            } else if status & 0x20 != 0 {
+                return Err("Drive Fault occured");
+            }
+
+            // Read data to buffer
+            let buff = unsafe { slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u16, buffer.len()/2) };
+            for i in 0..buff.len() {
+                buff[i+(sector as usize*256)] = self.read_data();
+            }
+
+            // Give the drive a 400ns delay to reset its DRQ bit
+            for _ in 0..4 {
+                self.read_register(RegisterType::Status);
+            }
+        }
+        // Return the amount of sectors read.
+        Ok(sector_count)
     }
 
-    // http://wiki.osdev.org/ATA_PIO_Mode#IDENTIFY_command
-    pub fn identify(&self, drive: Drive) -> AtaIdentifyResponse {
-        self.select_drive(drive);
-        self.write_register(RegisterType::SectorCount, 0);
-        self.write_register(RegisterType::LbaLow, 0);
-        self.write_register(RegisterType::LbaMid, 0);
-        self.write_register(RegisterType::LbaHigh, 0);
-
-        // Send identify command to command register
-        self.write_register(RegisterType::Command, 0xEC);
-        let status = self.read_register(RegisterType::Status);
-        // If value is 0, drive does not exist.
-        if status == 0 {
-            return AtaIdentifyResponse::DoesntExist;
-        }
-        // Polling until bit 7 of the status register clears
-        let status = self.poll(RegisterType::Status, |x| (x & 0x80)==0);
-        
-        // Decide if the device is Ata or not.
-        let lba_mid = self.read_register(RegisterType::LbaMid);
-        let lba_high = self.read_register(RegisterType::LbaHigh);
-        let device_type = Ata::get_device_type(lba_mid, lba_high);
-        // If device is not ata, return invalid device response
-        match device_type {
-            Ata => (),
-            _ => return AtaIdentifyResponse::InvalidDevice(device_type),
-        }
-
-        // Poll until bit 3 or bit 0 sets
-        let status = self.poll(RegisterType::Status, |x| (x&8) != 0 || x&1 != 0);
-        // If error is clear
-        if status & 1 != 1 {
-            let mut buff = vec![0u16;256];
-            // Filling buffer with response
-            for i in &mut buff {
-                *i = self.read_data(); 
-            }
-            // http://wiki.osdev.org/ATA_PIO_Mode#Interesting_information_returned_by_IDENTIFY
-            println!("buff[83] {:b}", buff[83]);
-            println!("buff[60] {:b}{:b}", buff[61], buff[60]);
-            //return AtaIdentifyResponse::ValidDevice(buff as IdentifyInformation);
-            return AtaIdentifyResponse::DoesntExist;
-        } else {
-            panic!("Error identifying disk");
-        }
+    fn write_at(&mut self, block: u64, buffer: &[u8]) -> Result<u8, &str> {
+        unimplemented!();
     }
 }

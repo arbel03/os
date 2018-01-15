@@ -36,7 +36,8 @@ extern "x86-interrupt" fn general_protection_fault(stack_frame: &idt::ExceptionS
     println!("Exception! General Protection Fault.");
     println!("Error code: {:b}", error_code);
     if error_code != 0 {
-        println!("Error in tbl: {}", (error_code & 6) >> 1);
+        let tbl_num = (error_code & 6) >> 1;
+        println!("Error in {}", if tbl_num == 1 { "IDT" } else { "GDT" });
         println!("Error in index: {}", error_code >> 3);
     }
     println!("{}", stack_frame);

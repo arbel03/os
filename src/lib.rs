@@ -34,7 +34,7 @@ pub struct BootloaderInfo {
 
 use memory::heap::BumpAllocator;
 #[global_allocator]
-static HEAP: BumpAllocator = BumpAllocator::new(0x100000, 0x7ee0000);
+static HEAP: BumpAllocator = BumpAllocator::new(0x0, 0x9fc00);
 
 #[no_mangle]
 pub extern fn kmain(bootloader_info: &BootloaderInfo) {
@@ -44,6 +44,9 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     memory::init(bootloader_info); 
     drivers::configure();
     interrupts::init();
+
+    drivers::disk::read();
+    loop {}
 }
 
 #[lang = "eh_personality"] extern fn eh_personality() { }
