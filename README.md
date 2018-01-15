@@ -1,5 +1,5 @@
 # Screenshots
-![Exception Handling](https://i.imgur.com/Wa43Xir.png)
+![Exception Handling](https://i.imgur.com/IDt038G.png)
 
 # Compiling Instructions
 
