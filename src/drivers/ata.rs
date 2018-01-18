@@ -4,7 +4,7 @@
 //      IRQ15
 // Each buss has 2 devices- master and slave
 use drivers::utils::*;
-use drivers::disk::{ DeviceType, Drive, Disk };
+use drivers::disk::{ DeviceType, Disk };
 use core::slice;
 
 pub struct Ata {
@@ -35,7 +35,6 @@ enum RegisterType {
 
 impl Ata {
     pub const PRIMARY: Ata = Ata::new(PortRange::new(0x1F0, 0x1F7), 0x3F6);
-    pub const SECTOR_SIZE: u64 = 512;
 
     pub const fn new(control_ports: PortRange, status_port: u16) -> Self {
         Ata {

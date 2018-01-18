@@ -3,7 +3,6 @@ pub mod segmentation;
 pub mod memory_map;
 
 use BootloaderInfo;
-use self::heap::BumpAllocator;
 use self::memory_map::MemoryAreaIterator;
 use self::segmentation::*;
 use dtables::{TableDescriptor, lgdt};
