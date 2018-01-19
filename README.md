@@ -1,22 +1,23 @@
 # Screenshots
-![Exception Handling](https://i.imgur.com/Wa43Xir.png)
+![Keyboard](https://i.imgur.com/Wa43Xir.png)
 
-# Compiling Instructions
+# Compilation Manual
 
 ### Install Rust
-Install rustup from https://www.rustup.rs
-Or by using the following command: 
-`curl https://sh.rustup.rs -sSf | sh`
+Install rustup from https://www.rustup.rs  
 
 ### Configure Rust
-Set the default keychain to nightly.
-`rustup override add nightly`
+Set the default keychain to nightly: `rustup override add nightly`
 
 ### Install Xargo
-Cargo comes with rustup, but it is not enough for cross compiling, we will use xargo, a wrapper for cargo that eases cross compilation.
-`cargo install xargo`
-Add the rust source code component for cross compiling (needed by xargo).
-`rustup component add rust-src`
+Install Xargo, a wrapper for cargo that eases cross compilation.  
+`cargo install xargo`  
+Add the rust source code component for cross compiling (needed by xargo).  
+`rustup component add rust-src`  
+
+### Install Mtools
+GNU Mtools commands are being used to generate the fat32 filesystem.  
+Mtools can be installed using many package managers and is available on windows too using cygwin.  
 
 ### Run
-Run using `make`
+Run using `make`  
