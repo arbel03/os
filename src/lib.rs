@@ -22,6 +22,7 @@ mod dtables;
 mod drivers;
 mod interrupts;
 mod memory;
+mod filesystem;
 
 #[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
@@ -45,7 +46,7 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     drivers::configure();
     interrupts::init();
 
-    drivers::disk::read();
+    filesystem::detect();
     loop {}
 }
 

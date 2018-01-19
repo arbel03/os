@@ -4,7 +4,7 @@
 //      IRQ15
 // Each buss has 2 devices- master and slave
 use drivers::utils::*;
-use drivers::disk::{ DeviceType, Disk };
+use filesystem::disk::{ DeviceType, Disk };
 use core::slice;
 
 pub struct Ata {
