@@ -1,8 +1,8 @@
 use drivers::ata::Ata;
-use vga_buffer;
 use core::str;
 
 #[repr(u8)]
+#[allow(dead_code)]
 pub enum Drive {
     Master = 0xA0,
     Slave = 0xB0,
