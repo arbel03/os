@@ -43,8 +43,8 @@ impl Ata {
         }
     }
 
-    fn write_register(&self, register: RegisterType, value: u8) {
-        unsafe { outb(self.get_port(register), value) }
+    unsafe fn write_register(&self, register: RegisterType, value: u8) {
+        outb(self.get_port(register), value)
     }
 
     fn get_port(&self, register: RegisterType) -> u16 {
@@ -54,16 +54,16 @@ impl Ata {
         }
     }
 
-    fn read_register(&self, register: RegisterType) -> u8 {
-        unsafe { inb(self.get_port(register)) }
+    unsafe fn read_register(&self, register: RegisterType) -> u8 {
+        inb(self.get_port(register))
     }
 
     // Reading a single value from the data port
-    fn read_data(&self) -> u16 {
-        unsafe { inw(self.control_ports.get(0)) }
+    unsafe fn read_data(&self) -> u16 {
+         inw(self.control_ports.get(0))
     }
 
-    fn poll<F>(&self, register: RegisterType, condition: F) -> u8 
+    unsafe fn poll<F>(&self, register: RegisterType, condition: F) -> u8 
         where F: Fn(u8) -> bool {
         
         let mut reg_value: u8;
@@ -77,7 +77,11 @@ impl Ata {
 }
 
 impl Disk for Ata {
-    fn read(&mut self, block: u64, buffer: &mut [u8]) -> Result<u8, &str> {
+    unsafe fn read(&self, block: u64, buffer: &mut [u8]) -> Result<u8, &str> {
+        // Transform buffer into byte array
+        // let new_len = buffer.len() * size_of::<T>() / size_of::<u8>();
+        // let buffer = slice::from_raw_parts_mut(buffer.as_ptr() as *mut u8, new_len);
+
         if buffer.len() % 512 != 0 {
             return Err("Size of buffer and requested read amount doesn't match.");
         }
@@ -96,7 +100,7 @@ impl Disk for Ata {
         self.write_register(RegisterType::LbaMid, (block >> 8) as u8);
         self.write_register(RegisterType::LbaHigh, (block >> 16) as u8);
         self.write_register(RegisterType::Command, 0x20); // READ SECTORS command
-        for sector in 0..sector_count-1 {
+        for sector in 0..sector_count {
             // poll until (!Bussy && DataRequestReady) or Error or DriveFault
             let status = self.poll(RegisterType::Status, |x| (x & 0x80 == 0 && x & 8 != 0) || x & 1 != 0 || x & 0x20 != 0);
 
@@ -108,7 +112,7 @@ impl Disk for Ata {
             }
 
             // Read data to buffer
-            let buff = unsafe { slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u16, buffer.len()/2) };
+            let buff = slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u16, buffer.len()/2);
             for i in 0..buff.len() {
                 buff[i+(sector as usize*256)] = self.read_data();
             }
@@ -122,7 +126,7 @@ impl Disk for Ata {
         Ok(sector_count)
     }
 
-    fn write_at(&mut self, block: u64, buffer: &[u8]) -> Result<u8, &str> {
+    unsafe fn write_at(&self, block: u64, buffer: &[u8]) -> Result<u8, &str> {
         unimplemented!();
     }
 }
