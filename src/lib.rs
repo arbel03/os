@@ -35,7 +35,7 @@ pub struct BootloaderInfo {
 
 use memory::heap::BumpAllocator;
 #[global_allocator]
-static HEAP: BumpAllocator = BumpAllocator::new(0x0, 0x9fc00);
+static HEAP: BumpAllocator = BumpAllocator::new(0x100000, 1000*1024);
 
 #[no_mangle]
 pub extern fn kmain(bootloader_info: &BootloaderInfo) {
