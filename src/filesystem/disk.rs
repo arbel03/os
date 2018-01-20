@@ -18,11 +18,6 @@ pub enum DeviceType {
 
 // Have Ata implement this
 pub trait Disk {
-    fn read(&mut self, block: u64, buffer: &mut [u8]) -> Result<u8, &str>;
-    fn write_at(&mut self, block: u64, buffer: &[u8]) -> Result<u8, &str>;
+    unsafe fn read(&self, block: u64, buffer: &mut [u8]) -> Result<u8, &str>;
+    unsafe fn write_at(&self, block: u64, buffer: &[u8]) -> Result<u8, &str>;
 }
-
-// pub fn init() {
-//     // Setup PCI bus here, detect disks and set the main disks
-    
-// }

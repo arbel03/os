@@ -19,7 +19,7 @@ run: $(iso)
 
 $(iso): $(filesystem_head) $(filesystem)
 	@cat $(filesystem_head) > $@
-	@dd if=$(filesystem) of=$@ count=90 bs=1 conv=notrunc
+	@dd if=$(filesystem) of=$@ count=1 bs=90 conv=notrunc
 	@dd if=$(filesystem) skip=$(shell echo $$(( $(shell stat -L -c %s $(filesystem_head)) / 512 )) ) bs=512 >> $@
 
 $(filesystem): $(filesystem_head)
@@ -29,7 +29,7 @@ $(filesystem): $(filesystem_head)
 
 	@mkdir -p build/isofiles/dir
 	@echo 'This is a sample file for testing' > build/isofiles/dir/file.txt
-
+	
 	@sudo mount -o loop $@ /mnt/tmp
 	@sudo cp -r build/isofiles/. /mnt/tmp
 	-@sudo umount /mnt/tmp || /bin/true
