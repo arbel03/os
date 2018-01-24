@@ -129,6 +129,19 @@ macro_rules! print {
     });
 }
 
+macro_rules! hex_dump {
+    ($value: expr) => {
+       for (i, n) in $value.iter().enumerate() {
+            print!("{:02x} ", *n);
+            if (i+1) % 16 == 0 {
+                print!("\n");
+            } else if (i+1) % 8 == 0 {
+                print!("  ");
+            }
+        }
+    };
+}
+
 pub fn clear_screen() {
     for _ in 0..BUFFER_HEIGHT {
         println!("");

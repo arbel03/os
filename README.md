@@ -15,9 +15,5 @@ Install Xargo, a wrapper for cargo that eases cross compilation.
 Add the rust source code component for cross compiling (needed by xargo).  
 `rustup component add rust-src`  
 
-### Install Mtools
-GNU Mtools commands are being used to generate the fat32 filesystem.  
-Mtools can be installed using many package managers and is available on windows too using cygwin.  
-
 ### Run
 Run using `make`  

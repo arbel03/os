@@ -1,7 +1,6 @@
 mod utils;
 mod pic;
-mod ata;
-pub mod disk;
+pub mod ata;
 pub mod keyboard;
 use self::pic::Pic;
 
@@ -13,9 +12,6 @@ pub fn configure() {
     Pic::MASTER.disable_irq(0); // Disable timer for now
     Pic::MASTER.enable_irq(1); // Keyboard
     Pic::MASTER.enable_irq(2); // Slave PIC
-
-    // Setup disk
-    disk::init();
 }
 
 // PIC end of interrupt function

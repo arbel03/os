@@ -22,6 +22,7 @@ mod dtables;
 mod drivers;
 mod interrupts;
 mod memory;
+mod filesystem;
 
 #[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
@@ -34,7 +35,7 @@ pub struct BootloaderInfo {
 
 use memory::heap::BumpAllocator;
 #[global_allocator]
-static HEAP: BumpAllocator = BumpAllocator::new(0x0, 0x9fc00);
+static HEAP: BumpAllocator = BumpAllocator::new(0x100000, 1000*1024);
 
 #[no_mangle]
 pub extern fn kmain(bootloader_info: &BootloaderInfo) {
@@ -45,7 +46,7 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     drivers::configure();
     interrupts::init();
 
-    drivers::disk::read();
+    filesystem::detect();
     loop {}
 }
 
