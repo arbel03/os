@@ -25,14 +25,18 @@ $(iso): $(filesystem_head) $(filesystem)
 $(filesystem): $(filesystem_head)
 	@dd if=/dev/zero of=$@ bs=1M count=50
 	-@sudo umount /mnt/tmp || /bin/true
-	@/sbin/mkfs.msdos -F 32 -R $(shell echo $$(( $(shell stat -L -c %s $(filesystem_head)) / 512)) ) $@
+	@/sbin/mkfs.fat -F 32 -R $(shell echo $$(( $(shell stat -L -c %s $(filesystem_head)) / 512)) ) $@
 
-	@mkdir -p build/isofiles/dir
-	@echo 'This is a sample file for testing' > build/isofiles/dir/file.txt
+	@mkdir -p build/isofiles/testdir
+	@mkdir -p build/isofiles/testasdasd
+	@mkdir -p build/isofiles/testasdasd2
+	@mkdir -p build/isofiles/testasdasd3
+	@mkdir -p build/isofiles/testasdas4
+	@echo 'This is a sample file for testing' > build/isofiles/testdir/testfile.txt
 	
-	@sudo mount -o loop $@ /mnt/tmp
-	@sudo cp -r build/isofiles/. /mnt/tmp
-	-@sudo umount /mnt/tmp || /bin/true
+	@sudo mount -o loop $@ /mnt
+	@sudo cp -r build/isofiles/. /mnt
+	-@sudo umount /mnt || /bin/true
 	@rm -r build/isofiles
 
 $(filesystem_head): $(kernel)
