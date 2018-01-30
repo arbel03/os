@@ -33,9 +33,9 @@ pub struct BootloaderInfo {
     kernel_end: u32,
 }
 
-use memory::heap::BumpAllocator;
+use memory::heap::LockedAllocator;
 #[global_allocator]
-static HEAP: BumpAllocator = BumpAllocator::new(0x100000, 1000*1024);
+static HEAP: LockedAllocator = LockedAllocator::new(0x1000000, 1000*1024);
 
 #[no_mangle]
 pub extern fn kmain(bootloader_info: &BootloaderInfo) {
@@ -57,5 +57,5 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
 pub extern fn panic_fmt(fmt: core::fmt::Arguments, file: &'static str, line: u32) -> ! {
     println!("PANIC in {} at line {}:", file, line);
     println!("{}", fmt);
-    loop{}
+    loop {}
 }
