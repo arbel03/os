@@ -35,13 +35,19 @@ impl LongFileName {
         buff[5..11].clone_from_slice(&self.name_middle);
         buff[11..].clone_from_slice(&self.name_final);
 
-        for b in &mut buff {
-            if *b == 65535 {
-                *b = 0;
+        // Replace null bytes and spaceholder values with spaces
+        let mut last_index = buff.len();
+        for (index, b) in buff.iter().enumerate() {
+            // print!("{:#x} ", *b as u16);
+            if *b == 0xffff || *b == 0 {
+                last_index = index;
+                break;
             }
         }
 
-        return String::from_utf16_lossy(&buff);
+        // use alloc::string::ToString;
+        // let name = String::from_utf16_lossy(&buff);
+        return String::from_utf16_lossy(&buff[..last_index]);
     }
 }
 
@@ -96,8 +102,8 @@ pub struct FatDirectory {
 
 impl FatDirectory {
     pub fn get_short_name(&self) -> String {
-        let name = self.name.to_vec();
-        return String::from_utf8(name).expect("Invalid UTF-8.");
+        use alloc::string::ToString;
+        return String::from_utf8(self.name.to_vec()).expect("Invalid UTF-8.").trim().to_string();
     }
 
     pub fn get_cluster(&self) -> u32 {

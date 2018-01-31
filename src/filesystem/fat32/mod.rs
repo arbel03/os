@@ -12,19 +12,17 @@ use core::slice;
 
 
 // Fat32 implementaion
-pub struct Fat32<'a> {
-    ebpb: &'a Ebpb,
+pub struct Fat32 {
+    ebpb: Ebpb,
 }
 
-impl <'a> Fat32<'a> {
-    pub fn new(disk: &Disk) -> Self {
+impl Fat32 {
+    pub unsafe fn new(disk: &Disk) -> Self {
         let mut x: [u8;512] = [0u8;512];
-        unsafe {
-            disk.read(0, &mut x).unwrap();
-            let ebpb = &*(x.as_ptr() as *const Ebpb);
-            Fat32 {
-                ebpb: ebpb,
-            }
+        disk.read(0, &mut x); // Read the first sector into x
+        let ebpb = (*(x.as_ptr() as *const Ebpb)).clone();
+        Fat32 {
+            ebpb: ebpb,
         }
     }
 
@@ -95,18 +93,26 @@ impl <'a> Fat32<'a> {
         self.read_cluster_chain(drive, cluster, &mut directories);
         return directories;
     }
-}
 
-impl <'a> Filesystem for Fat32<'a> {
-    fn open_file(&self, drive: &Disk, file_name: &str) -> FilePointer {
-        let root_dirs = self.read_folder(drive, self.ebpb.root_dir_cluster);
-        println!("{}", root_dirs[0].get_name());
-        if root_dirs[0].is_folder() {
-            let subdirs = self.read_folder(drive, root_dirs[0].get_cluster());
-            for dir in subdirs {
-                println!("    {}", dir.get_name());
+    fn recurse_folder(&self, drive: &Disk, cluster: Cluster, indent: usize) {
+        let dirs = self.read_folder(drive, cluster.0);
+        for dir in dirs {
+            let name = dir.get_name();
+            println!("{}{}{}", " ".repeat(indent*2), name, if name != "." && name != ".." && dir.is_folder() {
+                "/"
+            } else { "" });
+            if dir.is_folder() && name != "." && name != ".." {
+                self.recurse_folder(drive, Cluster(dir.get_cluster()), indent+1);
             }
         }
+    }
+}
+
+impl Filesystem for Fat32 {
+    fn open_file(&self, drive: &Disk, file_name: &str) -> FilePointer {
+        println!("Printing Filesystem recursively");
+        println!("/");
+        self.recurse_folder(drive, Cluster(self.ebpb.root_dir_cluster), 1);
 
         FilePointer {
             current_position: 0,

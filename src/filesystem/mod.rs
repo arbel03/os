@@ -38,7 +38,7 @@ struct FileDescriptor {
 }
 
 pub fn detect() {
-    let fat32 = fat32::Fat32::new(&Ata::PRIMARY);
+    let fat32 = unsafe { fat32::Fat32::new(&Ata::PRIMARY) };
 
     let mut fat = ManagedFilesystem {
         filesystem: &fat32,

@@ -1,7 +1,7 @@
 use super::{ Disk, Fat32 };
 
 #[repr(packed, C)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Bpb {
     pub skip_code: [u8; 3],
     pub oem_identifier: [u8;8],
@@ -20,7 +20,7 @@ pub struct Bpb {
 }
 
 #[repr(packed, C)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Ebpb {
     pub bpb: Bpb,
     pub sectors_per_fat: u32,
@@ -50,12 +50,12 @@ pub struct Cluster(pub u32);
 
 pub struct ClusterChain<'a> {
     current_entry: FatEntry,
-    fat: &'a Fat32<'a>,
+    fat: &'a Fat32,
     drive: &'a Disk,
 }
 
 impl <'a> ClusterChain<'a> {
-    pub const fn new(cluster: Cluster, fat: &'a Fat32<'a>, drive: &'a Disk) -> Self {
+    pub const fn new(cluster: Cluster, fat: &'a Fat32, drive: &'a Disk) -> Self {
         ClusterChain {
             current_entry: FatEntry::Node(cluster),
             fat: fat,

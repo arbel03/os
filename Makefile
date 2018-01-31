@@ -23,7 +23,7 @@ $(iso): $(filesystem_head) $(filesystem)
 	@dd if=$(filesystem) skip=$(shell echo $$(( $(shell stat -L -c %s $(filesystem_head)) / 512 )) ) bs=512 >> $@
 
 $(filesystem): $(filesystem_head)
-	@dd if=/dev/zero of=$@ bs=1M count=50
+	@dd if=/dev/zero of=$@ bs=1M count=34
 	-@sudo umount /mnt/tmp || /bin/true
 	@/sbin/mkfs.fat -F 32 -R $(shell echo $$(( $(shell stat -L -c %s $(filesystem_head)) / 512)) ) $@
 
