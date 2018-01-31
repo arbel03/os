@@ -1,7 +1,9 @@
 # Screenshots
-![Keyboard](https://i.imgur.com/Wa43Xir.png)
+![screenshot](https://i.imgur.com/er0m4vr.png)
 
 # Compilation Manual
+
+A linux environment is needed for compiling, dosfstools is needed to generate a disk img.
 
 ### Install Rust
 Install rustup from https://www.rustup.rs  
