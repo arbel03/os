@@ -1,3 +1,4 @@
+use spin::Mutex;
 use alloc::heap::{ Alloc, AllocErr, Layout };
 
 // TODO: improve allocator
@@ -12,7 +13,7 @@ impl BumpAllocator {
     }
 }
 
-unsafe impl <'a> Alloc for &'a BumpAllocator {
+unsafe impl Alloc for BumpAllocator {
     unsafe fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {
         // println!("Reqeusting layout: {:?}", layout);
         let current = self.current;
@@ -20,7 +21,8 @@ unsafe impl <'a> Alloc for &'a BumpAllocator {
         let alloc_end = alloc_start + layout.size();
         
         if alloc_end <= self.end {
-            //println!("Allocating at {:#x}", alloc_start);
+            self.current = alloc_end;
+            // println!("Allocating at {:#x}", alloc_start);
             return Ok(alloc_start as *mut u8);
         } else {
             print!("Allocator exhausted.");
@@ -30,6 +32,7 @@ unsafe impl <'a> Alloc for &'a BumpAllocator {
 
     unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
         // Do nothing, allow memory leaks
+        // println!("Dealloc: {}", ptr as u32);
     }
 }
 
@@ -49,4 +52,24 @@ pub fn align_down(addr: usize, align: usize) -> usize {
 /// so that x >= addr. The alignment must be a power of 2.
 pub fn align_up(addr: usize, align: usize) -> usize {
     align_down(addr + align - 1, align)
+}
+
+
+// Locked bump allocator
+pub struct LockedAllocator(Mutex<BumpAllocator>);
+
+impl LockedAllocator {
+    pub const fn new(start: usize, size: usize) -> Self {
+        LockedAllocator(Mutex::new(BumpAllocator::new(start, size)))
+    }
+}
+
+unsafe impl<'a> Alloc for &'a LockedAllocator {
+    unsafe fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {
+        self.0.lock().alloc(layout)
+    }
+
+    unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
+        self.0.lock().dealloc(ptr, layout)
+    }
 }

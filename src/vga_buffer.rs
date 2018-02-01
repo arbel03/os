@@ -139,6 +139,7 @@ macro_rules! hex_dump {
                 print!("  ");
             }
         }
+        println!("");
     };
 }
 

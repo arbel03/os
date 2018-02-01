@@ -83,7 +83,7 @@ impl Disk for Ata {
         // let buffer = slice::from_raw_parts_mut(buffer.as_ptr() as *mut u8, new_len);
 
         if buffer.len() % 512 != 0 {
-            return Err("Size of buffer and requested read amount doesn't match.");
+            return Err("Size of buffer, isnt a multiplication of sector size.");
         }
         if buffer.len() / 512 > 127 {
             return Err("Can only read 127 sectors at a time in LBA28 mode.");
@@ -105,10 +105,13 @@ impl Disk for Ata {
             let status = self.poll(RegisterType::Status, |x| (x & 0x80 == 0 && x & 8 != 0) || x & 1 != 0 || x & 0x20 != 0);
 
             if status & 1 != 0 {
+                if sector == 0 {
+                    return Err("No sectors read.");
+                }
                 // Return amount of read sectors.
                 return Ok(sector);
             } else if status & 0x20 != 0 {
-                return Err("Drive Fault occured");
+                return Err("Drive Fault occured.");
             }
 
             // Read data to buffer
