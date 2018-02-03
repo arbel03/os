@@ -2,49 +2,19 @@ target ?= target
 rust_os := target/$(target)/debug/libsos.a
 
 assembly_source_files := $(wildcard src/arch/*.asm)
-assembly_object_files := $(patsubst src/arch/%.asm, \
-	build/arch/%.o, $(assembly_source_files))
+assembly_object_files := $(patsubst src/arch/%.asm, build/arch/%.o, $(assembly_source_files))
 
-filesystem := build/filesystem.bin
-iso := build/os.iso
-filesystem_head := build/os_head.bin
+filesystem_head := build/head.bin
 kernel := build/kernel.bin
 
-.PHONY: clean all run cargo $(filesystem)
+.PHONY: clean all run cargo head
 
-all: run
-
-run: $(iso)
-	@qemu-system-i386 -drive file=$(iso),format=raw
-
-$(iso): $(filesystem_head) $(filesystem)
-	@cat $(filesystem_head) > $@
-	@dd if=$(filesystem) of=$@ count=1 bs=90 conv=notrunc
-	@dd if=$(filesystem) skip=$(shell echo $$(( $(shell stat -L -c %s $(filesystem_head)) / 512 )) ) bs=512 >> $@
-
-$(filesystem): $(filesystem_head)
-	@dd if=/dev/zero of=$@ bs=1M count=34
-	-@sudo umount /mnt/tmp || /bin/true
-	@/sbin/mkfs.fat -F 32 -R $(shell echo $$(( $(shell stat -L -c %s $(filesystem_head)) / 512)) ) $@
-
-	@mkdir -p build/isofiles/testdir
-	@mkdir -p build/isofiles/testasdasd
-	@mkdir -p build/isofiles/testasdasd2
-	@mkdir -p build/isofiles/testasdasd3
-	@mkdir -p build/isofiles/testasdas4
-	@echo 'This is a sample file for testing' > build/isofiles/testdir/testfile.txt
-	
-	@sudo mount -o loop $@ /mnt
-	@sudo cp -r build/isofiles/. /mnt
-	-@sudo umount /mnt || /bin/true
-	@rm -r build/isofiles
-
-$(filesystem_head): $(kernel)
+head: $(kernel)
 	@mkdir -p build
-	@nasm -f bin -o $@ -i bootloader/ bootloader/src/bootloader.asm
+	@nasm -f bin -o build/head.bin -i bootloader/ bootloader/src/bootloader.asm
 
 $(kernel): cargo $(rust_os) $(assembly_object_files)
-	@ld -n --gc-sections -m elf_i386 -T linker.ld -o $@ $(assembly_object_files) $(rust_os);\
+	@i386-elf-ld -n --gc-sections -m elf_i386 -T linker.ld -o $@ $(assembly_object_files) $(rust_os)
 
 cargo:
 	@export RUST_TARGET_PATH=$(shell pwd); xargo build --target $(target)

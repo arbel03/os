@@ -19,4 +19,4 @@ Add the rust source code component for cross compiling (needed by xargo).
 `rustup component add rust-src`  
 
 ### Run
-Run using `make`  
+Run using `./run.sh`  
