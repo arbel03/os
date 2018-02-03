@@ -30,8 +30,8 @@ $(filesystem): $(filesystem_head)
 	@mkdir -p build/isofiles/testdir
 	@echo 'This is a sample file for testing' > build/isofiles/testdir/testfile.txt
 	
-	$(eval MOUNT_POINT = $(shell hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount $@))
-	sudo mount -t msdos $(MOUNT_POINT) /mnt
+	@$(eval MOUNT_POINT = $(shell hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount $@))
+	@sudo mount -t msdos $(MOUNT_POINT) /mnt
 	@sudo cp -r build/isofiles/. /mnt
 	@hdiutil detach $(MOUNT_POINT) 
 	@rm -r build/isofiles

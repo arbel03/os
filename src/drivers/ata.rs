@@ -84,9 +84,10 @@ impl Disk for Ata {
 
         if buffer.len() % 512 != 0 {
             return Err("Size of buffer, isnt a multiplication of sector size.");
-        }
-        if buffer.len() / 512 > 127 {
+        } else if buffer.len() / 512 > 127 {
             return Err("Can only read 127 sectors at a time in LBA28 mode.");
+        } else if buffer.len() == 0 {
+            return Err("Size of read buffer can't be 0.");
         }
 
         let sector_count = (buffer.len()/512) as u8;
@@ -102,7 +103,7 @@ impl Disk for Ata {
         self.write_register(RegisterType::Command, 0x20); // READ SECTORS command
         for sector in 0..sector_count {
             // poll until (!Bussy && DataRequestReady) or Error or DriveFault
-            let status = self.poll(RegisterType::Status, |x| (x & 0x80 == 0 && x & 8 != 0) || x & 1 != 0 || x & 0x20 != 0);
+            let status = self.poll(RegisterType::Status, |x| (x & 0x80 == 0 && x & 0x8 != 0) || x & 0x1 != 0 || x & 0x20 != 0);
 
             if status & 1 != 0 {
                 if sector == 0 {
@@ -119,7 +120,7 @@ impl Disk for Ata {
             for i in 0..buff.len() {
                 buff[i+(sector as usize*256)] = self.read_data();
             }
-
+            
             // Give the drive a 400ns delay to reset its DRQ bit
             for _ in 0..4 {
                 self.read_register(RegisterType::Status);

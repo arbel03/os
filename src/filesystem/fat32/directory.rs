@@ -51,7 +51,7 @@ impl LongFileName {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Directory {
     name: String,
     fat_directory: FatDirectory,
@@ -80,6 +80,14 @@ impl Directory {
 
     pub fn is_folder(&self) -> bool {
         return self.fat_directory.attributes as u8 & FileAttributes::Directory as u8 == FileAttributes::Directory as u8;
+    }
+}
+
+use super::File;
+
+impl File for Directory {
+    fn get_name(&self) -> String {
+        return Directory::get_name(&self);
     }
 }
 

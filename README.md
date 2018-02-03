@@ -1,5 +1,6 @@
 # Screenshots
 ![screenshot](https://i.imgur.com/er0m4vr.png)
+![screenshot](https://i.imgur.com/xFYjdVT.png)
 
 # Compilation Manual
 
