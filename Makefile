@@ -14,7 +14,7 @@ head: $(kernel)
 	@nasm -f bin -o build/head.bin -i bootloader/ bootloader/src/bootloader.asm
 
 $(kernel): cargo $(rust_os) $(assembly_object_files)
-	@i386-elf-ld -n --gc-sections -m elf_i386 -T linker.ld -o $@ $(assembly_object_files) $(rust_os)
+	@$(LD) -n --gc-sections -m elf_i386 -T linker.ld -o $@ $(assembly_object_files) $(rust_os)
 
 cargo:
 	@export RUST_TARGET_PATH=$(shell pwd); xargo build --target $(target)

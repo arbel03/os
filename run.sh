@@ -5,18 +5,17 @@ FILESYSTEM="build/filesystem.bin"
 OS_FILE="build/os.bin"
 
 filesize_in_sectors() {
-    size_in_bytes=0
+    SIZE_IN_BYTES=0
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
-        size_in_bytes=$(stat -L -c %s $1)
+        SIZE_IN_BYTES=$(wc -c < $1)
     elif [[ "$OSTYPE" == "darwin"* ]]; then
-        size_in_bytes=$(stat -f %z $1)
+        SIZE_IN_BYTES=$(stat -f %z $1)
     fi
-    return $(( size_in_bytes/512 ))
+    echo $((SIZE_IN_BYTES / 512))
 }
 
 attach_kernel() {
-    filesize_in_sectors $FILESYSTEM_HEAD
-    RESEREVED_SECTORS=$?
+    RESEREVED_SECTORS=$(filesize_in_sectors $FILESYSTEM_HEAD)
     cat $FILESYSTEM_HEAD > $OS_FILE
     dd if=$FILESYSTEM of=$OS_FILE count=1 bs=90 conv=notrunc
     dd if=$FILESYSTEM skip=$RESEREVED_SECTORS bs=512 >> $OS_FILE
@@ -25,13 +24,14 @@ attach_kernel() {
 create_filesystem() {
     # Unmounting
     sudo umount /mnt || true
-    # Creating empty file
-    dd if=/dev/zero of=$FILESYSTEM bs=1m count=34
 
-    # Getting the size of FILESYSTEM_HEAD
-    filesize_in_sectors $FILESYSTEM_HEAD
-    RESEREVED_SECTORS=$?
+    # Creating empty file
+    dd if=/dev/zero of=$FILESYSTEM bs=$BLOCK_SIZE count=34
     
+    # Getting the size of FILESYSTEM_HEAD
+    RESEREVED_SECTORS=$(filesize_in_sectors $FILESYSTEM_HEAD)
+
+    export PATH=/sbin:$PATH
     # Creating an empty Fat32 filesystem
     mkfs.fat -F 32 -R $RESEREVED_SECTORS $FILESYSTEM
 
@@ -47,7 +47,7 @@ create_filesystem() {
 
     # Mounting the file and copying files to it
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
-        sudo mount -o loop FILESYSTEM /mnt
+        sudo mount -o loop $FILESYSTEM /mnt
         sudo cp -r build/isofiles/. /mnt
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         MOUNT_POINT=$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount $FILESYSTEM)
@@ -61,8 +61,17 @@ create_filesystem() {
 }
 
 run() {
+    BLOCK_SIZE=0
+    LD=0
+    if [[ "$OSTYPE" == "linux-gnu" ]]; then
+        BLOCK_SIZE="1M"
+        LD="ld"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        BLOCK_SIZE="1m"
+        LD="i386-elf-ld"
+    fi
     # Compiling bootloader and kernel into a single file
-    make head
+    make head LD=$LD
     # Creating a filesystem Fat32 file with reserved sectors the size of the bootloader+kernel
     create_filesystem
     # Attaching the kernel to the filesystem file
