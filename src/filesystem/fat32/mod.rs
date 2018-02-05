@@ -3,7 +3,7 @@ mod table;
 
 use self::directory::*;
 use self::table::*;
-use super::{ Filesystem, FilePointer, FileDescriptor, File };
+use super::{ Filesystem, FilePointer, File };
 use super::disk::Disk;
 
 use alloc::Vec;
@@ -59,7 +59,13 @@ impl Fat32 {
             if directory.is_lfn() {
                 let lfn_directory = unsafe { *(directory as *const _ as *const LongFileName) };
                 let long_file_name = lfn_directory.get_name();
-                temp_name = Some(long_file_name);
+                if temp_name != None {
+                    // If a long file name is in the buffer and the current directory is another long file name, 
+                    // apply it to the previously stored file name.
+                    temp_name = Some(format!("{}{}", long_file_name, temp_name.unwrap()));
+                } else {
+                    temp_name = Some(long_file_name);
+                }
             } else {
                 if let Some(stored_name) = temp_name {
                     directories.push(Directory::new(stored_name, *directory));
@@ -87,13 +93,15 @@ impl Fat32 {
     fn find_file(&self, drive: &Disk, cluster: u32, path: &mut Split<&str>) -> Option<Directory> {
         if let Some(component) = path.next() {
             let current_dirs = self.read_folder(drive, cluster);
+            // let names = current_dirs.iter().map(|x| x.get_name()).collect::<Vec<String>>();
+            // println!("Searching {} in {:?}", component, names);
             let dir = current_dirs
                     .iter()
                     .find(|dir| dir.get_name() == component)
                     .expect(&format!("Folder {} not found.", component))
                     .clone();
-            if dir.is_folder() {
-                return self.find_file(drive, dir.get_cluster(), path);
+            if dir.get_fat_dir().is_folder() {
+                return self.find_file(drive, dir.get_fat_dir().get_cluster(), path);
             } else {
                 return Some(dir);
             }
@@ -121,7 +129,37 @@ impl Filesystem for Fat32 {
         None
     }
 
-    fn read_file(&self, drive: &Disk, descriptor: FileDescriptor<Directory>, buffer: &[u8], count: u64) {
+    fn read_file(&self, drive: &Disk, file_pointer: &FilePointer<Self::FileType>, buffer: &mut [u8]) -> Option<usize> {
+        let cluster_size = self.get_bytes_in_cluster() as usize;
+        let read_length = buffer.len();
+        let file_size = file_pointer.get_file().get_size();
+        let read_start = file_pointer.get_current();
+        if read_length % cluster_size == 0 && read_length % cluster_size == 0 {
+            // If we don't try to read more than the file size
+            // Get a cluster chain for the file
+            let starting_cluster = file_pointer.get_file().get_fat_dir().get_cluster();
+            let mut cluster_chain = ClusterChain::new(Cluster(starting_cluster), self, drive);
 
+            // Getting the first cluster the current read should start from
+            let mut current_cluster_index = read_start/cluster_size;
+            // Getting the cluster we should read from, if its out of the borders of the chain, return None
+            if let Some(mut current_cluster) = cluster_chain.nth(current_cluster_index) {
+                let mut part = 0;
+                while read_start + part*cluster_size < file_size || part*cluster_size < read_length {
+                    let mut temp_buffer = vec![0u8;cluster_size];
+                    unsafe { drive.read(self.first_sector_of_cluster(current_cluster.0), &mut temp_buffer); }
+
+                    buffer[part*cluster_size..(part+1)*cluster_size].clone_from_slice(&temp_buffer);
+                    part += 1;
+                    if let Some(next_cluster) = cluster_chain.next() {
+                        current_cluster = next_cluster;
+                    } else {
+                        break;
+                    }
+                }
+                return Some(part*cluster_size);
+            }
+        }
+        return None;
     }
 }

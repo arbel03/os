@@ -5,15 +5,18 @@ use drivers::ata::Ata;
 use self::disk::Disk;
 use alloc::vec::Vec;
 use alloc::string::String;
+use core::cell::RefCell;
 
 trait Filesystem {
     type FileType: File;
     fn open_file(&self, drive: &Disk, file_name: &str) -> Option<FilePointer<Self::FileType>>;
-    fn read_file(&self, drive: &Disk, descriptor: FileDescriptor<Self::FileType>, buffer: &[u8], count: u64);
+    fn read_file(&self, drive: &Disk, file_pointer: &FilePointer<Self::FileType>, buffer: &mut [u8]) -> Option<usize>;
 }
 
 trait File {
     fn get_name(&self) -> String;
+    // Returns the size in bytes of the file
+    fn get_size(&self) -> usize; 
 }
 
 enum FileMode {
@@ -28,6 +31,14 @@ struct FilePointer<T: File> {
 }
 
 impl <T: File> FilePointer<T> {
+    pub fn get_current(&self) -> usize {
+        self.current
+    }
+
+    pub fn advance_pointer(&mut self, amount: usize) {
+        self.current += amount
+    }
+
     pub fn get_file(&self) -> &T {
         &self.file
     }
@@ -39,6 +50,20 @@ struct FileDescriptor<T: File> {
     pointer: FilePointer<T>
 }
 
+impl <T: File> FileDescriptor<T> {
+    pub fn get_id(&self) -> u16 {
+        self.id
+    }
+
+    pub fn get_pointer(&self) -> &FilePointer<T> {
+        &self.pointer
+    }
+
+    pub fn get_pointer_mut(&mut self) -> &mut FilePointer<T> {
+        &mut self.pointer
+    }
+}
+
 struct ManagedFilesystem<'a, T: 'a + Filesystem> {
     filesystem: &'a T,
     drive: &'a Disk,
@@ -46,20 +71,47 @@ struct ManagedFilesystem<'a, T: 'a + Filesystem> {
 }
 
 impl <'a, T: Filesystem>  ManagedFilesystem<'a, T> {
-    fn open_file(&mut self, file_name: &str) {
-        let file_pointer = self.filesystem.open_file(self.drive, file_name).expect("Unable to get file pointer.");
-        println!("Got File Pointer.");
-        let descriptor = FileDescriptor {
-            id: 1,
-            mode: FileMode::ReadWrite,
-            pointer: file_pointer,
-        };
-        self.descriptors.push(descriptor);
+    fn open_file(&mut self, file_name: &str) -> Option<u16> {
+        if let Some(file_pointer) = self.filesystem.open_file(self.drive, file_name) {
+            // println!("Got file pointer.");
+            let mut lowest_index = self.descriptors.len();
+            for (index, descriptor) in self.descriptors.iter().enumerate() {
+                if descriptor.get_id() as usize > index {
+                    lowest_index = index;
+                    break;
+                }
+            }
+            // println!("Creating new descriptor-{}.", lowest_index);
+            let descriptor = FileDescriptor {
+                id: lowest_index as u16,
+                mode: FileMode::ReadWrite,
+                pointer: file_pointer,
+            };
+            self.descriptors.insert(lowest_index, descriptor);
+            return Some(lowest_index as u16);
+        }
+        println!("Unable to get file pointer.");
+        return None;
     }
 
-    fn read_file(&self, descriptor: u16, buffer: &[u8], count: u64) {
-        if let Some(descriptor) = self.descriptors.iter().find(|x| x.id == descriptor) {
-            println!("File name is: {}", descriptor.pointer.get_file().get_name());
+    fn close_descriptor(&mut self, descriptor: u16) {
+        let result = self.descriptors.iter().position(|x| x.get_id() == descriptor);
+        if let Some(index) = result {
+            self.descriptors.remove(index);
+            // println!("Closed descriptor {}.", index);
+        } else {
+            println!("Descriptor {} is not open.", descriptor);
+        }
+    }
+
+    fn read_file(&mut self, descriptor: u16, buffer: &mut [u8]) {
+        if let Some(descriptor) = self.descriptors.iter_mut().find(|x| x.id == descriptor) {
+            let file_pointer = descriptor.get_pointer_mut();
+            if let Some(result) = self.filesystem.read_file(self.drive, file_pointer, buffer) {
+                file_pointer.advance_pointer(result);
+            } else {
+                println!("Unable to read file.");
+            }
         } else {
             println!("Descriptor {} is not open.", descriptor);
         }
@@ -75,8 +127,16 @@ pub fn detect() {
         descriptors: Vec::new(),
     };
 
-    println!("\nOpening file \"{}\"", "testdir/testfile.txt");
-    fat.open_file("testdir/testfile.txt");
-    fat.read_file(1, &[0u8;1], 1);
+    let path = "testasdasd/longfilenametest.txt";
+    println!("");
+    println!("Opening file \"{}\".", path);
+    if let Some(opened_descriptor) = fat.open_file(path) {
+        println!("Printing contents of file:");
+
+        let mut buffer = [0u8; 512];
+        fat.read_file(opened_descriptor, &mut buffer);       
+        use core::str;
+        println!("{}", str::from_utf8(&buffer).expect("Invalid UTF-8."));
+    }
     loop {};
 }

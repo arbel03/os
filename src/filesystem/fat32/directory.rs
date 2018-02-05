@@ -1,4 +1,5 @@
 use alloc::string::String;
+use super::File;
 
 #[repr(u8)]
 #[allow(dead_code)]
@@ -65,29 +66,19 @@ impl Directory {
         }
     }
 
-    pub fn is_lfn(&self) -> bool {
-        return self.fat_directory.is_lfn();
+    pub fn get_fat_dir(&self) -> &FatDirectory {
+        &self.fat_directory
     }
+}
 
-    pub fn get_name(&self) -> String {
+impl File for Directory {
+    fn get_name(&self) -> String {
         use alloc::string::ToString;
         return self.name.to_string();
     }
 
-    pub fn get_cluster(&self) -> u32 {
-        return self.fat_directory.get_cluster();
-    }
-
-    pub fn is_folder(&self) -> bool {
-        return self.fat_directory.attributes as u8 & FileAttributes::Directory as u8 == FileAttributes::Directory as u8;
-    }
-}
-
-use super::File;
-
-impl File for Directory {
-    fn get_name(&self) -> String {
-        return Directory::get_name(&self);
+    fn get_size(&self) -> usize {
+        self.fat_directory.file_size as usize
     }
 }
 
@@ -120,5 +111,9 @@ impl FatDirectory {
 
     pub fn is_lfn(&self) -> bool {
         return self.attributes as u8 == FileAttributes::LongName as u8;
+    }
+
+    pub fn is_folder(&self) -> bool {
+        return self.attributes as u8 & FileAttributes::Directory as u8 == FileAttributes::Directory as u8;
     }
 }

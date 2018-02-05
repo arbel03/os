@@ -43,7 +43,7 @@ create_filesystem() {
     mkdir build/isofiles/testasdasd2
     mkdir build/isofiles/testasdasd3
     mkdir build/isofiles/testasdas4
-    echo 'This is a sample file for testing' > build/isofiles/testdir/testfile.txt
+    echo 'This is a sample file for testing' > build/isofiles/testasdasd/longfilenametest.txt
 
     # Mounting the file and copying files to it
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
