@@ -27,6 +27,7 @@ pub struct IdtEntry {
     base_high: u16 // Higher address of the ISR
 }
 
+#[repr(C, packed)]
 pub struct ExceptionStackFrame {
     pub instruction_pointer: u32,
     pub code_segment: u32,
@@ -78,3 +79,89 @@ impl IdtEntry {
     }
 }
 
+#[repr(C, packed)]
+pub struct Exceptions {
+    pub divide_by_zero: IdtEntry,
+    pub debug: IdtEntry,
+    pub non_maskable_interrupt: IdtEntry,
+    pub breakpoint: IdtEntry,
+    pub overflow: IdtEntry,
+    pub bound_range_exceeded: IdtEntry,
+    pub invalid_opcode: IdtEntry,
+    pub device_not_available: IdtEntry,
+    pub double_fault: IdtEntry,
+    pub invalid_tss: IdtEntry,
+    pub segment_not_present: IdtEntry,
+    pub stack_segment_fault: IdtEntry,
+    pub general_protection_fault: IdtEntry,
+    pub page_fault: IdtEntry,
+    reserved1: IdtEntry,
+    pub x87_floating_point: IdtEntry,
+    pub alignment_check: IdtEntry,
+    pub machine_check: IdtEntry,
+    pub simd_floating_point: IdtEntry,
+    pub virtualization: IdtEntry,
+    pub reserved2: [IdtEntry; 9],
+    pub security_exception: IdtEntry,
+    pub reserved3: [IdtEntry; 2]
+}
+
+impl Exceptions {
+    const fn new() -> Self {
+        Exceptions {
+            divide_by_zero: IdtEntry::MISSING,
+            debug: IdtEntry::MISSING,
+            non_maskable_interrupt: IdtEntry::MISSING,
+            breakpoint: IdtEntry::MISSING,
+            overflow: IdtEntry::MISSING,
+            bound_range_exceeded: IdtEntry::MISSING,
+            invalid_opcode: IdtEntry::MISSING,
+            device_not_available: IdtEntry::MISSING,
+            double_fault: IdtEntry::MISSING,
+            invalid_tss: IdtEntry::MISSING,
+            segment_not_present: IdtEntry::MISSING,
+            stack_segment_fault: IdtEntry::MISSING,
+            general_protection_fault: IdtEntry::MISSING,
+            page_fault: IdtEntry::MISSING,
+            reserved1: IdtEntry::MISSING,
+            x87_floating_point: IdtEntry::MISSING,
+            alignment_check: IdtEntry::MISSING,
+            machine_check: IdtEntry::MISSING,
+            simd_floating_point: IdtEntry::MISSING,
+            virtualization: IdtEntry::MISSING,
+            reserved2: [IdtEntry::MISSING; 9],
+            security_exception: IdtEntry::MISSING,
+            reserved3: [IdtEntry::MISSING; 2],
+        }
+    }
+}
+
+#[repr(C, packed)]
+pub struct Idt {
+    pub exceptions: Exceptions,
+    hardware_interrupts: [IdtEntry; 32],
+    interrupts: [IdtEntry; 191],
+}
+
+impl Idt {
+    pub const fn new() -> Self {
+        Idt {
+            exceptions: Exceptions::new(),
+            hardware_interrupts: [IdtEntry::MISSING; 32],
+            interrupts: [IdtEntry::MISSING; 191],
+        }
+    }
+
+    pub fn set_hardware_interrupt(&mut self, index: usize, idt: IdtEntry) {
+        if index < self.hardware_interrupts.len() {
+            self.hardware_interrupts[index] = idt;
+        }
+    }
+
+    pub fn load(&self) {
+        use dtables::{ TableDescriptor, lidt };
+        let idtr = TableDescriptor::new(self);
+        // println!("Idtr {{ size: {}, ptr: {} }}", idtr.limit, idtr.ptr);
+        unsafe { lidt(&idtr); }
+    }
+}

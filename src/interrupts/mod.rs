@@ -1,20 +1,18 @@
 mod idt;
-use dtables::{TableDescriptor, lidt};
 use drivers;
+use self::idt::Idt;
 
-static mut IDT: [idt::IdtEntry; 256] = [idt::IdtEntry::MISSING; 256];
+static mut IDT: Idt = Idt::new();
 
 pub fn init() {
     unsafe {
-        IDT[8] = idt::IdtEntry::new(double_fault as u32);
-        IDT[33] = idt::IdtEntry::new(keyboard_irq as u32); 
-        IDT[5] = idt::IdtEntry::new(bound_range_exceeded as u32);             
-        IDT[13] = idt::IdtEntry::new(general_protection_fault as u32);       
-        IDT[46] = idt::IdtEntry::new(primary_ata_controller as u32);       
-        
-        let idtr = TableDescriptor::new(&IDT);
-        lidt(&idtr);
+        IDT.exceptions.double_fault = idt::IdtEntry::new(double_fault as u32);
+        IDT.set_hardware_interrupt(1, idt::IdtEntry::new(keyboard_irq as u32)); 
+        IDT.exceptions.bound_range_exceeded = idt::IdtEntry::new(bound_range_exceeded as u32);             
+        IDT.exceptions.general_protection_fault = idt::IdtEntry::new(general_protection_fault as u32);       
+        IDT.set_hardware_interrupt(14, idt::IdtEntry::new(primary_ata_controller as u32));
 
+        IDT.load();
         // Enable hardware interrupts
         asm!("sti");
     }

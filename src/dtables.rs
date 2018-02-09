@@ -7,12 +7,12 @@ pub struct TableDescriptor {
 }
 
 impl TableDescriptor {
-    pub fn new<T>(table: &[T]) -> Self {
-        let size = mem::size_of::<T>() * table.len() - 1;
+    pub fn new<T>(structure: &T) -> Self {
+        let size = mem::size_of::<T>() - 1;
 
         TableDescriptor {
             limit: size as u16,
-            ptr: table.as_ptr() as u32,
+            ptr: structure as *const _ as u32,
         }
     }
 }
