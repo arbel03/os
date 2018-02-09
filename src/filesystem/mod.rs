@@ -127,16 +127,16 @@ pub fn detect() {
         descriptors: Vec::new(),
     };
 
-    let path = "testasdasd/longfilenametest.txt";
+    let path = "bin/print.o";
     println!("");
     println!("Opening file \"{}\".", path);
     if let Some(opened_descriptor) = fat.open_file(path) {
         println!("Printing contents of file:");
 
         let mut buffer = [0u8; 512];
-        fat.read_file(opened_descriptor, &mut buffer);       
+        fat.read_file(opened_descriptor, &mut buffer); 
         use core::str;
-        println!("{}", str::from_utf8(&buffer).expect("Invalid UTF-8."));
+        println!("{}", unsafe { str::from_utf8_unchecked(&buffer) });
     }
     loop {};
 }

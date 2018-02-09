@@ -93,8 +93,8 @@ impl Fat32 {
     fn find_file(&self, drive: &Disk, cluster: u32, path: &mut Split<&str>) -> Option<Directory> {
         if let Some(component) = path.next() {
             let current_dirs = self.read_folder(drive, cluster);
-            // let names = current_dirs.iter().map(|x| x.get_name()).collect::<Vec<String>>();
-            // println!("Searching {} in {:?}", component, names);
+            let names = current_dirs.iter().map(|x| x.get_name()).collect::<Vec<String>>();
+            println!("Searching {} in {:?}", component, names);
             let dir = current_dirs
                     .iter()
                     .find(|dir| dir.get_name() == component)
@@ -130,36 +130,34 @@ impl Filesystem for Fat32 {
     }
 
     fn read_file(&self, drive: &Disk, file_pointer: &FilePointer<Self::FileType>, buffer: &mut [u8]) -> Option<usize> {
+        use core::cmp::min;
         let cluster_size = self.get_bytes_in_cluster() as usize;
-        let read_length = buffer.len();
-        let file_size = file_pointer.get_file().get_size();
-        let read_start = file_pointer.get_current();
-        if read_length % cluster_size == 0 && read_length % cluster_size == 0 {
-            // If we don't try to read more than the file size
-            // Get a cluster chain for the file
-            let starting_cluster = file_pointer.get_file().get_fat_dir().get_cluster();
-            let mut cluster_chain = ClusterChain::new(Cluster(starting_cluster), self, drive);
 
-            // Getting the first cluster the current read should start from
-            let mut current_cluster_index = read_start/cluster_size;
-            // Getting the cluster we should read from, if its out of the borders of the chain, return None
-            if let Some(mut current_cluster) = cluster_chain.nth(current_cluster_index) {
-                let mut part = 0;
-                while read_start + part*cluster_size < file_size || part*cluster_size < read_length {
-                    let mut temp_buffer = vec![0u8;cluster_size];
-                    unsafe { drive.read(self.first_sector_of_cluster(current_cluster.0), &mut temp_buffer); }
-
-                    buffer[part*cluster_size..(part+1)*cluster_size].clone_from_slice(&temp_buffer);
-                    part += 1;
-                    if let Some(next_cluster) = cluster_chain.next() {
-                        current_cluster = next_cluster;
-                    } else {
-                        break;
-                    }
-                }
-                return Some(part*cluster_size);
-            }
+        // If the read buffer isn't a cluster_size multiplication we return None.
+        if buffer.len() % cluster_size != 0 {
+            return None;
         }
-        return None;
+        // Getting the file size in clusters
+        let file_size = file_pointer.get_file().get_size() / cluster_size + 1;
+        let read_size = buffer.len() / cluster_size;
+
+        // If we don't try to read more than the file size
+        // Get a cluster chain for the file
+        let starting_cluster = file_pointer.get_file().get_fat_dir().get_cluster();
+        let cluster_chain = ClusterChain::new(Cluster(starting_cluster), self, drive);
+
+        let mut part = 0;
+        // Getting the cluster we should read from, if its out of the borders of the chain, return None
+        for cluster in cluster_chain {
+            if part >= min(file_size, read_size) {
+                break;
+            }
+            let mut temp_buffer = vec![0u8;cluster_size];
+            unsafe { drive.read(self.first_sector_of_cluster(cluster.0), &mut temp_buffer); }
+
+            buffer[part*cluster_size..(part+1)*cluster_size].clone_from_slice(&temp_buffer);
+            part += 1;
+        }
+        return Some(part*cluster_size);
     }
 }

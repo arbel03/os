@@ -38,12 +38,15 @@ create_filesystem() {
     mkdir -p build/isofiles
 
     # Adding files to the newly created filesystem
-    mkdir build/isofiles/testdir
-    mkdir build/isofiles/testasdasd
-    mkdir build/isofiles/testasdasd2
-    mkdir build/isofiles/testasdasd3
-    mkdir build/isofiles/testasdas4
-    echo 'This is a sample file for testing' > build/isofiles/testasdasd/longfilenametest.txt
+    mkdir build/isofiles/bin
+    mkdir build/isofiles/source
+    echo "
+    #include <stdio.h> 
+    int main() { 
+        printf(\"Hello\"); 
+        return 0; 
+    }" > build/isofiles/source/print.c
+    gcc -o build/isofiles/bin/print.o build/isofiles/source/print.c
 
     # Mounting the file and copying files to it
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
