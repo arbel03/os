@@ -16,42 +16,6 @@ pub enum FileAttributes {
     FileAttributes::VolumeId as u8,
 } 
 
-#[repr(packed, C)]
-#[derive(Debug, Copy, Clone)]
-pub struct LongFileName {
-    order: u8,
-    name_first: [u16; 5],
-    attributes: u8,
-    long_entry_type: u8,
-    checksum: u8,
-    name_middle: [u16; 6],
-    reserved: u16,
-    name_final: [u16; 2],
-}
-
-impl LongFileName {
-    pub fn get_name(&self) -> String {
-        let mut buff = vec![0u16; 13];
-        buff[..5].clone_from_slice(&self.name_first);
-        buff[5..11].clone_from_slice(&self.name_middle);
-        buff[11..].clone_from_slice(&self.name_final);
-
-        // Replace null bytes and spaceholder values with spaces
-        let mut last_index = buff.len();
-        for (index, b) in buff.iter().enumerate() {
-            // print!("{:#x} ", *b as u16);
-            if *b == 0xffff || *b == 0 {
-                last_index = index;
-                break;
-            }
-        }
-
-        // use alloc::string::ToString;
-        // let name = String::from_utf16_lossy(&buff);
-        return String::from_utf16_lossy(&buff[..last_index]);
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Directory {
     name: String,
@@ -115,5 +79,29 @@ impl FatDirectory {
 
     pub fn is_folder(&self) -> bool {
         return self.attributes as u8 & FileAttributes::Directory as u8 == FileAttributes::Directory as u8;
+    }
+
+    pub unsafe fn get_long_name(&self) -> String {
+        use core::slice;
+        // Slice of 32 bytes
+        let bytes = slice::from_raw_parts(self as *const FatDirectory as *const u8, 32);
+        let name_first = slice::from_raw_parts(&bytes[1] as *const u8 as *const u16, 5);
+        let name_middle = slice::from_raw_parts(&bytes[14] as *const u8 as *const u16, 6);
+        let name_final = slice::from_raw_parts(&bytes[28] as *const u8 as *const u16, 2);
+
+        let mut buff = vec![0u16; 13];
+        buff[..5].clone_from_slice(name_first);
+        buff[5..11].clone_from_slice(name_middle);
+        buff[11..].clone_from_slice(name_final);
+
+        let mut last_index = buff.len();
+        for (index, b) in buff.iter().enumerate() {
+            if *b == 0xffff || *b == 0 {
+                last_index = index;
+                break;
+            }
+        }
+
+        return String::from_utf16_lossy(&buff[..last_index]);
     }
 }

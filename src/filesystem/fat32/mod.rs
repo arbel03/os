@@ -57,8 +57,7 @@ impl Fat32 {
             }
 
             if directory.is_lfn() {
-                let lfn_directory = unsafe { *(directory as *const _ as *const LongFileName) };
-                let long_file_name = lfn_directory.get_name();
+                let long_file_name = unsafe { directory.get_long_name() };
                 if temp_name != None {
                     // If a long file name is in the buffer and the current directory is another long file name, 
                     // apply it to the previously stored file name.
@@ -95,15 +94,19 @@ impl Fat32 {
             let current_dirs = self.read_folder(drive, cluster);
             let names = current_dirs.iter().map(|x| x.get_name()).collect::<Vec<String>>();
             println!("Searching {} in {:?}", component, names);
-            let dir = current_dirs
-                    .iter()
-                    .find(|dir| dir.get_name() == component)
-                    .expect(&format!("Folder {} not found.", component))
-                    .clone();
+            let mut dir: &Directory;
+            if let Some(found_dir) = current_dirs.iter().find(|dir| dir.get_name() == component) {
+                dir = found_dir;
+            } else {
+                dir = current_dirs.iter().find(|dir| { 
+                    use alloc::string::ToString;
+                    return dir.get_name() == component.to_string().to_uppercase();
+                }).unwrap();
+            }
             if dir.get_fat_dir().is_folder() {
                 return self.find_file(drive, dir.get_fat_dir().get_cluster(), path);
             } else {
-                return Some(dir);
+                return Some(dir.clone());
             }
         } else {
             // Reached the end of path iterator

@@ -5,17 +5,15 @@ use drivers::ata::Ata;
 use self::disk::Disk;
 use alloc::vec::Vec;
 use alloc::string::String;
-use core::cell::RefCell;
 
 trait Filesystem {
     type FileType: File;
     fn open_file(&self, drive: &Disk, file_name: &str) -> Option<FilePointer<Self::FileType>>;
     fn read_file(&self, drive: &Disk, file_pointer: &FilePointer<Self::FileType>, buffer: &mut [u8]) -> Option<usize>;
-}
+} 
 
 trait File {
     fn get_name(&self) -> String;
-    // Returns the size in bytes of the file
     fn get_size(&self) -> usize; 
 }
 
