@@ -156,7 +156,7 @@ impl Filesystem for Fat32 {
                 break;
             }
             let mut temp_buffer = vec![0u8;cluster_size];
-            unsafe { drive.read(self.first_sector_of_cluster(cluster.0), &mut temp_buffer); }
+            unsafe { drive.read(self.first_sector_of_cluster(cluster.0), &mut temp_buffer).unwrap(); }
 
             buffer[part*cluster_size..(part+1)*cluster_size].clone_from_slice(&temp_buffer);
             part += 1;

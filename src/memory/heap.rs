@@ -1,7 +1,6 @@
 use spin::Mutex;
 use alloc::heap::{ Alloc, AllocErr, Layout };
 
-// TODO: improve allocator
 pub struct BumpAllocator {
     end: usize,
     current: usize,
@@ -15,7 +14,6 @@ impl BumpAllocator {
 
 unsafe impl Alloc for BumpAllocator {
     unsafe fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {
-        // println!("Reqeusting layout: {:?}", layout);
         let current = self.current;
         let alloc_start = align_up(current, layout.align());
         let alloc_end = alloc_start + layout.size();
@@ -30,9 +28,9 @@ unsafe impl Alloc for BumpAllocator {
         }
     }
 
+    #[allow(unused_variables)]
     unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
-        // Do nothing, allow memory leaks
-        // println!("Dealloc: {}", ptr as u32);
+        unimplemented!();
     }
 }
 

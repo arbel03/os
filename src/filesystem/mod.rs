@@ -17,6 +17,7 @@ trait File {
     fn get_size(&self) -> usize; 
 }
 
+#[allow(dead_code)]
 enum FileMode {
     Read,
     Write,
@@ -28,6 +29,7 @@ struct FilePointer<T: File> {
     file: T,
 }
 
+#[allow(dead_code)]
 impl <T: File> FilePointer<T> {
     pub fn get_current(&self) -> usize {
         self.current
@@ -42,6 +44,7 @@ impl <T: File> FilePointer<T> {
     }
 }
 
+#[allow(dead_code)]
 struct FileDescriptor<T: File> {
     id: u16,
     mode: FileMode,
@@ -53,6 +56,7 @@ impl <T: File> FileDescriptor<T> {
         self.id
     }
 
+    #[allow(dead_code)]
     pub fn get_pointer(&self) -> &FilePointer<T> {
         &self.pointer
     }
@@ -92,6 +96,7 @@ impl <'a, T: Filesystem>  ManagedFilesystem<'a, T> {
         return None;
     }
 
+    #[allow(dead_code)]
     fn close_descriptor(&mut self, descriptor: u16) {
         let result = self.descriptors.iter().position(|x| x.get_id() == descriptor);
         if let Some(index) = result {

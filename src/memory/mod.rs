@@ -15,7 +15,7 @@ extern {
 static mut GDT: [u64; 8] = [0; 8];
 
 unsafe fn encode_entry_at(index: usize, entry: SegmentDescriptor) {
-    let mut descriptor_high: u32 = 0;
+    let mut descriptor_high: u32;
     // Create the high 32 bit segment
     descriptor_high  =  (entry.base & 0x00FF0000) >> 16;
     descriptor_high |= (entry.access_byte as u32) << 8;

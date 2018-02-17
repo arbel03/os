@@ -130,6 +130,7 @@ impl Disk for Ata {
         Ok(sector_count)
     }
 
+    #[allow(unused_variables)]
     unsafe fn write_at(&self, block: u64, buffer: &[u8]) -> Result<u8, &str> {
         unimplemented!();
     }

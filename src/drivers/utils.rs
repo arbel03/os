@@ -32,6 +32,7 @@ pub unsafe fn inw(port: u16) -> u16 {
     return ret;
 }
 
+#[allow(dead_code)]
 pub unsafe fn outw(port: u16, val: u16) {
     asm!("outw %ax, %dx" :: "{dx}"(port), "{al}"(val));
 }

@@ -129,6 +129,7 @@ macro_rules! print {
     });
 }
 
+#[allow(unused_macros)]
 macro_rules! hex_dump {
     ($value: expr) => {
        for (i, n) in $value.iter().enumerate() {
