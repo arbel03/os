@@ -15,9 +15,10 @@
 extern crate alloc;
 extern crate rlibc;
 extern crate spin;
+extern crate bitmap_allocator;
 
 #[macro_use] // vec! macro
-mod vga_buffer;
+pub mod vga_buffer;
 mod dtables;
 mod drivers;
 mod interrupts;
@@ -33,9 +34,10 @@ pub struct BootloaderInfo {
     kernel_end: u32,
 }
 
-use memory::heap::LockedAllocator;
+use memory::heap::Heap;
+use bitmap_allocator::BitmapAllocator;
 #[global_allocator]
-static HEAP: LockedAllocator = LockedAllocator::new(0x1000000, 1000*1024);
+static HEAP: Heap = Heap::new(BitmapAllocator::new(0x1000000, 1000*1024));
 
 #[no_mangle]
 pub extern fn kmain(bootloader_info: &BootloaderInfo) {

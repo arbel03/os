@@ -1,6 +1,6 @@
-pub mod heap;
 pub mod segmentation;
 pub mod memory_map;
+pub mod heap;
 
 use BootloaderInfo;
 use self::memory_map::MemoryAreaIterator;

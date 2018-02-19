@@ -1,0 +1,4 @@
+[package]
+name = "bitmap_allocator"
+version = "0.0.0"
+authors = ["Arbel Israeli <arbel03@gmail.com>"]
