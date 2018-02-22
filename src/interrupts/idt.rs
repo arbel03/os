@@ -158,10 +158,12 @@ impl Idt {
         }
     }
 
-    pub fn load(&self) {
+    pub unsafe fn load(&self) {
         use dtables::{ TableDescriptor, lidt };
-        let idtr = TableDescriptor::new(self);
-        // println!("Idtr {{ size: {}, ptr: {} }}", idtr.limit, idtr.ptr);
-        unsafe { lidt(&idtr); }
+        use core::slice;
+        let idt_slice = slice::from_raw_parts(self as *const _ as *const IdtEntry, 256);
+        let idtr = TableDescriptor::new(idt_slice);
+        println!("Idtr: {:?}", idtr);
+        lidt(&idtr);
     }
 }

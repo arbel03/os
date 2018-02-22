@@ -1,22 +1,25 @@
 use core::mem;
 
 #[repr(C, packed)]
+#[derive(Debug)]
 pub struct TableDescriptor { 
     pub limit: u16, // Size of the table
     pub ptr: u32, // pointer
 }
 
 impl TableDescriptor {
-    pub fn new<T>(structure: &T) -> Self {
-        let size = mem::size_of::<T>() - 1;
+    // This function creates a new TableDescriptor from a slice.
+    pub fn new<T>(structure: &[T]) -> Self {
+        let size = mem::size_of_val(structure) - 1;
 
         TableDescriptor {
             limit: size as u16,
-            ptr: structure as *const _ as u32,
+            ptr: structure.as_ptr() as *const _ as u32,
         }
     }
 }
 
+#[inline(always)]
 pub unsafe fn lgdt(gdt: &TableDescriptor) {
     asm!("lgdt [$0]" :: "r"(gdt) : "memory" : "intel");
 }

@@ -37,16 +37,7 @@ create_filesystem() {
 
     mkdir -p build/isofiles
 
-    # Adding files to the newly created filesystem
-    mkdir build/isofiles/bin
-    mkdir build/isofiles/source
-    echo "
-    #include <stdio.h> 
-    int main() { 
-        printf(\"Hello\"); 
-        return 0; 
-    }" > build/isofiles/source/print.c
-    gcc -o build/isofiles/bin/print.o build/isofiles/source/print.c
+    cp -r filesystem/. build/isofiles
 
     # Mounting the file and copying files to it
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
@@ -60,7 +51,6 @@ create_filesystem() {
 	    hdiutil detach $MOUNT_POINT
     fi
     sudo umount /mnt || true
-    rm -r build/isofiles
 }
 
 run() {
@@ -75,12 +65,16 @@ run() {
     fi
     # Compiling bootloader and kernel into a single file
     make head LD=$LD
-    # Creating a filesystem Fat32 file with reserved sectors the size of the bootloader+kernel
-    create_filesystem
-    # Attaching the kernel to the filesystem file
-    attach_kernel
-    # Running
-    qemu-system-i386 -drive file=$OS_FILE,format=raw
+    success=$?
+    # If there is no error in compiling the kernel
+    if [ $success -ne 2 ]; then
+        # Creating a filesystem Fat32 file with reserved sectors the size of the bootloader+kernel
+        create_filesystem
+        # Attaching the kernel to the filesystem file
+        attach_kernel
+        # Running
+        qemu-system-i386 -drive file=$OS_FILE,format=raw
+    fi
 }
 
 run

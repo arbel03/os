@@ -37,7 +37,7 @@ pub struct BootloaderInfo {
 use memory::heap::Heap;
 use bitmap_allocator::BitmapAllocator;
 #[global_allocator]
-static HEAP: Heap = Heap::new(BitmapAllocator::new(0x1000000, 1000*1024));
+static HEAP: Heap = Heap::new(BitmapAllocator::new(0x0, 0x9fc00));
 
 #[no_mangle]
 pub extern fn kmain(bootloader_info: &BootloaderInfo) {
@@ -49,6 +49,7 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     interrupts::init();
 
     filesystem::detect();
+
     loop {}
 }
 

@@ -66,8 +66,8 @@ impl <T: File> FileDescriptor<T> {
     }
 }
 
-struct ManagedFilesystem<'a, T: 'a + Filesystem> {
-    filesystem: &'a T,
+struct ManagedFilesystem<'a, T: Filesystem> {
+    filesystem: T,
     drive: &'a Disk,
     descriptors: Vec<FileDescriptor<T::FileType>>,
 }
@@ -121,25 +121,27 @@ impl <'a, T: Filesystem>  ManagedFilesystem<'a, T> {
     }
 }
 
+// Fat Filesystem of the main disk.
+static mut FAT: Option<ManagedFilesystem<fat32::Fat32>> = None;
+
 pub fn detect() {
-    let fat32 = unsafe { fat32::Fat32::new(&Ata::PRIMARY) };
-
-    let mut fat = ManagedFilesystem {
-        filesystem: &fat32,
-        drive: &Ata::PRIMARY,
-        descriptors: Vec::new(),
+    unsafe {
+        FAT = Some(ManagedFilesystem {
+            filesystem: fat32::Fat32::new(&Ata::PRIMARY),
+            drive: &Ata::PRIMARY,
+            descriptors: Vec::new(),
+        });
     };
+    
+    // let path = "BIN/PRINT   O";
+    // println!("");
+    // println!("Opening file \"{}\".", path);
+    // if let Some(opened_descriptor) = fat.open_file(path) {
+    //     println!("Printing contents of file:");
 
-    let path = "bin/print.o";
-    println!("");
-    println!("Opening file \"{}\".", path);
-    if let Some(opened_descriptor) = fat.open_file(path) {
-        println!("Printing contents of file:");
-
-        let mut buffer = [0u8; 512];
-        fat.read_file(opened_descriptor, &mut buffer); 
-        use core::str;
-        println!("{}", unsafe { str::from_utf8_unchecked(&buffer) });
-    }
-    loop {};
+    //     let mut buffer = [0u8; 512];
+    //     fat.read_file(opened_descriptor, &mut buffer); 
+    //     use core::str;
+    //     println!("{}", unsafe { str::from_utf8_unchecked(&buffer) });
+    // }
 }

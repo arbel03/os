@@ -3,18 +3,19 @@ pub mod memory_map;
 pub mod heap;
 
 use BootloaderInfo;
-use self::memory_map::MemoryAreaIterator;
+use alloc::vec::Vec;
+use alloc::boxed::Box;
+use self::memory_map::{ MemoryAreaIterator, MemoryAreaType };
 use self::segmentation::*;
-use dtables::{TableDescriptor, lgdt};
+use dtables::{ TableDescriptor, lgdt };
 
 extern {
     fn gdt_flush();
 }
 
-// My gdt, containing 8 bytes entries (or unsigned 64 bit values)
-static mut GDT: [u64; 8] = [0; 8];
+type GdtEntry = u64;
 
-unsafe fn encode_entry_at(index: usize, entry: SegmentDescriptor) {
+unsafe fn encode_entry(entry: SegmentDescriptor) -> GdtEntry {
     let mut descriptor_high: u32;
     // Create the high 32 bit segment
     descriptor_high  =  (entry.base & 0x00FF0000) >> 16;
@@ -28,36 +29,52 @@ unsafe fn encode_entry_at(index: usize, entry: SegmentDescriptor) {
     descriptor_low |= entry.base << 16;                 // set base bits 15:0
     descriptor_low |= entry.limit & 0xFFFF;               // set limit bits 15:0
 
-    GDT[index] = (descriptor_high as u64) << 32;
-    GDT[index] |= descriptor_low as u64;
+    let mut descriptor: u64 = (descriptor_high as u64) << 32;
+    descriptor |= descriptor_low as u64;
+    return descriptor;
+}
+
+static mut GDT: Option<Box<[GdtEntry]>> = None;
+pub unsafe fn set_gdt(descriptors: Vec<SegmentDescriptor>) {
+    let mut gdt: Vec<u64> = Vec::with_capacity(descriptors.len()); 
+    for descriptor in descriptors {
+        gdt.push(encode_entry(descriptor));
+    }
+    
+    GDT = Some(gdt.into_boxed_slice());
+    use core::ops::Deref;
+    let gdt_entries = GDT.as_ref().unwrap().deref();
+
+    // Printing Gdt    
+    // for entry in gdt_entries.iter() {
+    //     println!("{:#x}{:x}", *entry >> 32 as u32, *entry as u32);
+    // }
+
+    // Loading gdt
+    let gdtr = TableDescriptor::new(gdt_entries);
+    println!("Gdtr: {:?}", gdtr);
+    lgdt(&gdtr);
+    gdt_flush();
 }
 
 pub fn init(bootloader_info: &BootloaderInfo) {
-    // Adding gdt entries
-    let code_segment = SegmentDescriptor::new(0, 0xffffffff, 0x9A, 0xC);
-    let data_segment = SegmentDescriptor::new(0, 0xffffffff, 0x92, 0xC);
-    
+    let mut descriptors: Vec<SegmentDescriptor> = Vec::new();
+    // Null descriptor
+    descriptors.push(SegmentDescriptor::NULL);
+    // Kernel Code Segment
+    descriptors.push(SegmentDescriptor::new(0, bootloader_info.kernel_end, 0x9A, 0xC));
+    // Kernel Data Segment
+    descriptors.push(SegmentDescriptor::new(0, bootloader_info.kernel_end, 0x92, 0xC));
+
     unsafe {
-        encode_entry_at(0, SegmentDescriptor::NULL);
-        encode_entry_at(1, code_segment);
-        encode_entry_at(2, data_segment);
-
-        // Loading gdt
-        let gdtr = TableDescriptor::new(&GDT);
-        lgdt(&gdtr);
-        gdt_flush();
-    }
-
-    println!("Printing GDT");
-    for entry in [code_segment, data_segment].iter() {
-        println!("  {:?}", entry);
+        set_gdt(descriptors);
     }
 
     println!("Printing free memory areas");
-    let memory_iter = MemoryAreaIterator::new(&bootloader_info, 0x1);
+    let memory_iter = MemoryAreaIterator::new(&bootloader_info, MemoryAreaType::Free);
     for memory_area in memory_iter {
         unsafe {
-            println!("  Start: {:#x}, End: {:#x}, Size: {:#x}", memory_area.base, memory_area.base + memory_area.size, memory_area.size);
+            println!("  Start: {:#010x}, Size: {:#010x}, Type: {}", memory_area.base, memory_area.size, memory_area.region_type);
         }
     }
 }
