@@ -55,6 +55,7 @@ pub struct Writer {
 impl Writer {
     pub fn write_byte(&mut self, byte: u8) {
         match byte {
+            b'\t' => for _ in 0..4 { self.write_byte(' ' as u8) },
             b'\n' => self.new_line(),
             byte => {
                 if self.column_position >= BUFFER_WIDTH {

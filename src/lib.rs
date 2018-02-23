@@ -37,12 +37,11 @@ pub struct BootloaderInfo {
 use memory::heap::Heap;
 use bitmap_allocator::BitmapAllocator;
 #[global_allocator]
-static HEAP: Heap = Heap::new(BitmapAllocator::new(0x0, 0x9fc00));
+static HEAP: Heap = Heap::new(BitmapAllocator::new(0x1000000, 1024*100)); // 100 KB
 
 #[no_mangle]
 pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     vga_buffer::clear_screen();
-    println!("Kernel loaded to {:#x}", bootloader_info.kernel_start);
     
     memory::init(bootloader_info); 
     drivers::configure();

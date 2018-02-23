@@ -31,6 +31,14 @@ impl BitmapAllocator {
         }
     }
 
+    pub fn set_bitmap_start(&mut self, bitmap_start: usize) {
+        self.bitmap_start = bitmap_start;
+    }
+
+    pub fn set_size(&mut self, size: usize) {
+        self.block_count = size / (mem::size_of::<CellState>() + BitmapAllocator::BLOCK_SIZE);
+    }
+
     pub fn init(&mut self) {
         for index in 0..self.block_count {
             *self.get_cell(index) = CellState::Free;
