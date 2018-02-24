@@ -140,7 +140,7 @@ impl Exceptions {
 pub struct Idt {
     pub exceptions: Exceptions,
     hardware_interrupts: [IdtEntry; 32],
-    interrupts: [IdtEntry; 191],
+    pub interrupts: [IdtEntry; 191],
 }
 
 impl Idt {

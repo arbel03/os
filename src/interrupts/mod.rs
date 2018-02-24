@@ -1,4 +1,6 @@
 mod idt;
+mod syscall;
+
 use drivers;
 use self::idt::Idt;
 
@@ -12,9 +14,17 @@ pub fn init() {
         IDT.exceptions.general_protection_fault = idt::IdtEntry::new(general_protection_fault as u32);       
         IDT.set_hardware_interrupt(14, idt::IdtEntry::new(primary_ata_controller as u32));
 
+        // Setup syscalls
+        syscall::init();
+
         IDT.load();
         // Enable hardware interrupts
         asm!("sti");
+    }
+
+    // Test syscalls
+    unsafe {
+        asm!("int 0x80" :::: "intel");
     }
 }
 
