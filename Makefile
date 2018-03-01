@@ -20,7 +20,7 @@ cargo:
 	@export RUST_TARGET_PATH=$(shell pwd); xargo build --target $(target)
 
 clean:
-	@rm -rf build
+	# @rm -rf build
 	@xargo clean
 
 build/arch/%.o: src/arch/%.asm

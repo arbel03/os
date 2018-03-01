@@ -2,7 +2,7 @@
 
 FILESYSTEM_HEAD="build/head.bin"
 FILESYSTEM="build/filesystem.bin"
-OS_FILE="build/os.bin"
+OS_FILE="build/os.img"
 
 filesize_in_sectors() {
     SIZE_IN_BYTES=0
