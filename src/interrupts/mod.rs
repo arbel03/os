@@ -21,11 +21,6 @@ pub fn init() {
         // Enable hardware interrupts
         asm!("sti");
     }
-
-    // Test syscalls
-    unsafe {
-        asm!("int 0x80" :::: "intel");
-    }
 }
 
 extern "x86-interrupt" fn primary_ata_controller(_stack_frame: &idt::ExceptionStackFrame) {

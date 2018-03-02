@@ -25,8 +25,8 @@ create_filesystem() {
     # Unmounting
     sudo umount /mnt || true
 
-    # Creating empty file
-    dd if=/dev/zero of=$FILESYSTEM bs=$BLOCK_SIZE count=34
+    # Creating empty disk image with a size of 5mb
+    dd if=/dev/zero of=$FILESYSTEM bs=$BLOCK_SIZE count=5
     
     # Getting the size of FILESYSTEM_HEAD
     RESEREVED_SECTORS=$(filesize_in_sectors $FILESYSTEM_HEAD)

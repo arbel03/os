@@ -124,7 +124,7 @@ impl <'a, T: Filesystem>  ManagedFilesystem<'a, T> {
 // Fat Filesystem of the main disk.
 static mut FAT: Option<ManagedFilesystem<fat32::Fat32>> = None;
 
-pub fn detect() {
+pub fn init() {
     unsafe {
         FAT = Some(ManagedFilesystem {
             filesystem: fat32::Fat32::new(&Ata::PRIMARY),

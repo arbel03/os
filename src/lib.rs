@@ -8,8 +8,11 @@
 #![feature(alloc)]
 #![feature(allocator_api)]
 #![feature(global_allocator)]
-#![allow(safe_packed_borrows)]
+#![feature(core_intrinsics)]
+#![feature(use_extern_macros)]
+#![feature(naked_functions)]
 #![no_std]
+#![allow(safe_packed_borrows)]
 
 #[macro_use]
 extern crate alloc;
@@ -47,7 +50,24 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     drivers::configure();
     interrupts::init();
 
-    filesystem::detect();
+    filesystem::init();
+
+    // Test syscalls
+    unsafe {
+        asm!("
+            mov eax, 256
+            mov ebx, 512
+            mov ecx, 1024
+            mov edx, 2048
+            mov esi, 4096
+            mov edi, 8192
+            int 0x80" :::: "intel", "volatile");
+
+        // Print syscall result
+        let a: usize;
+        asm!("" : "={eax}"(a));
+        println!("{}", a);
+    }
 
     loop {}
 }
