@@ -29,6 +29,8 @@ mod memory;
 mod filesystem;
 mod syscall;
 
+pub use interrupts::syscall::syscall_handler_inner;
+
 #[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 pub struct BootloaderInfo {

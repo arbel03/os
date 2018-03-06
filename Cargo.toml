@@ -11,3 +11,6 @@ crate-type = ["staticlib"]
 rlibc = "1.0"
 spin = "0.4.5"
 bitmap_allocator = { path = "bitmap_allocator" }
+
+[profile.dev]
+opt-level=0

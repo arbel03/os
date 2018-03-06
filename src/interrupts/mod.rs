@@ -1,5 +1,5 @@
+pub mod syscall;
 mod idt;
-mod syscall;
 mod exceptions;
 
 use drivers;
