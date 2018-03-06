@@ -27,6 +27,7 @@ mod drivers;
 mod interrupts;
 mod memory;
 mod filesystem;
+mod syscall;
 
 #[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
@@ -52,24 +53,12 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
 
     filesystem::init();
 
-    // Test syscalls
-    unsafe {
-        asm!("
-            mov eax, 256
-            mov ebx, 512
-            mov ecx, 1024
-            mov edx, 2048
-            mov esi, 4096
-            mov edi, 8192
-            int 0x80" :::: "intel", "volatile");
+    let file_path = "testfile.txt";
+    println!("Opening path: ptr {}, size {}", file_path.as_ptr() as usize, file_path.len());
+    let result = unsafe { syscall::syscall2(0x11, file_path.as_ptr() as usize, file_path.len()) };
+    println!("result: {}", result);
 
-        // Print syscall result
-        let a: usize;
-        asm!("" : "={eax}"(a));
-        println!("{}", a);
-    }
-
-    loop {}
+    loop {};
 }
 
 #[lang = "eh_personality"] extern fn eh_personality() { }

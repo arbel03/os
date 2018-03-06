@@ -1,10 +1,11 @@
 mod idt;
 mod syscall;
+mod exceptions;
 
 use drivers;
-use self::idt::Idt;
+use self::exceptions::*;
 
-static mut IDT: Idt = Idt::new();
+static mut IDT: idt::Idt = idt::Idt::new();
 
 pub fn init() {
     unsafe {
@@ -33,29 +34,4 @@ extern "x86-interrupt" fn keyboard_irq(_stack_frame: &idt::ExceptionStackFrame) 
         print!("{}", c);
     }
     drivers::send_eoi(false);
-}
-
-extern "x86-interrupt" fn general_protection_fault(stack_frame: &idt::ExceptionStackFrame, error_code: u32) {
-    println!("Exception! General Protection Fault.");
-    println!("Error code: {:b}", error_code);
-    if error_code != 0 {
-        let tbl_num = (error_code & 6) >> 1;
-        println!("Error in {}", if tbl_num == 1 { "IDT" } else { "GDT" });
-        println!("Error in index: {}", error_code >> 3);
-    }
-    println!("{}", stack_frame);
-    loop {};
-}
-
-extern "x86-interrupt" fn bound_range_exceeded(stack_frame: &mut idt::ExceptionStackFrame) {
-    println!("Exception! Bound Range Exceeded.");
-    println!("{}", stack_frame);
-    loop {};
-}
-
-extern "x86-interrupt" fn double_fault(stack_frame: &idt::ExceptionStackFrame, error_code: u32) {
-    println!("Exception! Double Fault.");
-    println!("Error Code: {:b}", error_code);
-    println!("{}", stack_frame);
-    loop {};
 }
