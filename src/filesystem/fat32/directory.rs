@@ -66,19 +66,23 @@ pub struct FatDirectory {
 impl FatDirectory {
     pub fn get_short_name(&self) -> String {
         use alloc::string::ToString;
-        return String::from_utf8(self.name.to_vec()).expect("Invalid UTF-8.").trim().to_string();
+        String::from_utf8(self.name.to_vec()).expect("Invalid UTF-8.").trim().to_string()
     }
 
     pub fn get_cluster(&self) -> u32 {
-        return (self.first_cluster_high as u32) << 16 | self.first_cluster_low as u32;
+        (self.first_cluster_high as u32) << 16 | self.first_cluster_low as u32
+    }
+
+    pub fn get_size(&self) -> usize {
+        self.file_size as usize
     }
 
     pub fn is_lfn(&self) -> bool {
-        return self.attributes as u8 == FileAttributes::LongName as u8;
+        self.attributes as u8 == FileAttributes::LongName as u8
     }
 
     pub fn is_folder(&self) -> bool {
-        return self.attributes as u8 & FileAttributes::Directory as u8 == FileAttributes::Directory as u8;
+        self.attributes as u8 & FileAttributes::Directory as u8 == FileAttributes::Directory as u8
     }
 
     pub unsafe fn get_long_name(&self) -> String {
@@ -102,6 +106,6 @@ impl FatDirectory {
             }
         }
 
-        return String::from_utf16_lossy(&buff[..last_index]);
+        String::from_utf16_lossy(&buff[..last_index])
     }
 }

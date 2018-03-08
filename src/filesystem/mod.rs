@@ -1,10 +1,13 @@
 pub mod disk;
-pub mod fat32;
+mod fat32;
+mod file;
+mod descriptor;
 
-use drivers::ata::Ata;
+use self::file::*;
+use self::descriptor::*;
 use self::disk::Disk;
+use drivers::ata::Ata;
 use alloc::vec::Vec;
-use alloc::string::String;
 
 pub trait Filesystem {
     type FileType: File;
@@ -12,68 +15,15 @@ pub trait Filesystem {
     fn read_file(&self, drive: &Disk, file_pointer: &FilePointer<Self::FileType>, buffer: &mut [u8]) -> Option<usize>;
 } 
 
-pub trait File {
-    fn get_name(&self) -> String;
-    fn get_size(&self) -> usize; 
-}
-
-#[allow(dead_code)]
-enum FileMode {
-    Read,
-    Write,
-    ReadWrite,
-}
-
-pub struct FilePointer<T: File> {
-    current: usize,
-    file: T,
-}
-
-#[allow(dead_code)]
-impl <T: File> FilePointer<T> {
-    pub fn get_current(&self) -> usize {
-        self.current
-    }
-
-    pub fn advance_pointer(&mut self, amount: usize) {
-        self.current += amount
-    }
-
-    pub fn get_file(&self) -> &T {
-        &self.file
-    }
-}
-
-#[allow(dead_code)]
-struct FileDescriptor<T: File> {
-    id: u16,
-    mode: FileMode,
-    pointer: FilePointer<T>
-}
-
-impl <T: File> FileDescriptor<T> {
-    pub fn get_id(&self) -> u16 {
-        self.id
-    }
-
-    #[allow(dead_code)]
-    pub fn get_pointer(&self) -> &FilePointer<T> {
-        &self.pointer
-    }
-
-    pub fn get_pointer_mut(&mut self) -> &mut FilePointer<T> {
-        &mut self.pointer
-    }
-}
-
 pub struct ManagedFilesystem<'a, T: Filesystem> {
     filesystem: T,
     drive: &'a Disk,
     descriptors: Vec<FileDescriptor<T::FileType>>,
 }
 
+#[allow(dead_code)]
 impl <'a, T: Filesystem>  ManagedFilesystem<'a, T> {
-    pub fn open_file(&mut self, file_name: &str) -> Option<u16> {
+    pub fn open_file(&mut self, file_name: &str) -> Option<usize> {
         if let Some(file_pointer) = self.filesystem.open_file(self.drive, file_name) {
             // println!("Got file pointer.");
             let mut lowest_index = self.descriptors.len();
@@ -84,39 +34,60 @@ impl <'a, T: Filesystem>  ManagedFilesystem<'a, T> {
                 }
             }
             // println!("Creating new descriptor-{}.", lowest_index);
-            let descriptor = FileDescriptor {
-                id: lowest_index as u16,
-                mode: FileMode::ReadWrite,
-                pointer: file_pointer,
-            };
+            let descriptor = FileDescriptor::new(lowest_index, FileMode::ReadWrite, file_pointer);
             self.descriptors.insert(lowest_index, descriptor);
-            return Some(lowest_index as u16);
+            return Some(lowest_index);
         }
         println!("Unable to get file pointer.");
         return None;
     }
 
-    #[allow(dead_code)]
-    pub fn close_descriptor(&mut self, descriptor: u16) {
-        let result = self.descriptors.iter().position(|x| x.get_id() == descriptor);
-        if let Some(index) = result {
-            self.descriptors.remove(index);
-            // println!("Closed descriptor {}.", index);
+    // TODO: Add error handling
+    pub fn seek(&mut self, descriptor: usize, new_current: usize) {
+        if let Some(descriptor) = self.descriptors.iter_mut().find(|x| x.get_id() == descriptor) {
+            let file_pointer = descriptor.get_pointer_mut();
+            let file_size = file_pointer.get_file().get_size();
+            if new_current < file_size {
+                file_pointer.set_current(new_current);
+            } else {
+                println!("Trying to seek to outside of file bounds named {}", file_pointer.get_file().get_name());
+            }
         } else {
             println!("Descriptor {} is not open.", descriptor);
         }
     }
 
-    pub fn read_file(&mut self, descriptor: u16, buffer: &mut [u8]) {
-        if let Some(descriptor) = self.descriptors.iter_mut().find(|x| x.id == descriptor) {
+    // TODO: Add error handling
+    pub fn close_descriptor(&mut self, descriptor: usize) {
+        let result = self.descriptors.iter().position(|x| x.get_id() == descriptor);
+        if let Some(index) = result {
+            self.descriptors.remove(index);
+        } else {
+            println!("Descriptor {} is not open.", descriptor);
+        }
+    }
+
+    // TODO: Add error handling
+    pub fn read_file(&mut self, descriptor: usize, buffer: &mut [u8]) {
+        if let Some(descriptor) = self.descriptors.iter_mut().find(|x| x.get_id() == descriptor) {
             let file_pointer = descriptor.get_pointer_mut();
             if let Some(result) = self.filesystem.read_file(self.drive, file_pointer, buffer) {
-                file_pointer.advance_pointer(result);
+                file_pointer.advance_current(result);
             } else {
                 println!("Unable to read file.");
             }
         } else {
             println!("Descriptor {} is not open.", descriptor);
+        }
+    }
+
+    // This is not a syscall
+    pub fn get_current_offset(&self, descriptor: usize) -> usize {
+        if let Some(descriptor) = self.descriptors.iter().find(|x| x.get_id() == descriptor) {
+            let file_pointer = descriptor.get_pointer();
+            return file_pointer.get_current();
+        } else {
+            return 0xFFFFFFFF;
         }
     }
 }

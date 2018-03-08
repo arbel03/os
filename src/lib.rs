@@ -55,10 +55,15 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
 
     filesystem::init();
 
-    let file_path = "testfile.txt";
-    println!("Opening path: ptr {}, size {}", file_path.as_ptr() as usize, file_path.len());
-    let result = unsafe { syscall::syscall2(0x11, file_path.as_ptr() as usize, file_path.len()) };
-    println!("result: {}", result);
+    // Test filesystem syscalls
+    use syscall::fs::{ open, read, seek };
+    let mut read_buffer = vec![0u8;20];
+    unsafe {
+        let fd = open("TESTFILETXT");
+        seek(fd, 540);
+        read(fd, &mut read_buffer);
+    }
+    println!("Read Buffer: {}", core::str::from_utf8(&read_buffer).unwrap());
 
     loop {};
 }

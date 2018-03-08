@@ -23,7 +23,7 @@ pub struct Registers {
 }
 
 #[no_mangle]
-pub extern fn syscall_handler_inner(regs: &Registers) { 
+pub unsafe extern fn syscall_handler_inner(regs: &Registers) { 
     let result = syscall::syscall(regs.eax, regs.ebx, regs.ecx, regs.edx, regs.esi, regs.edi);
-    unsafe { asm!("mov eax, $0" :: "m"(result) :: "intel"); }
+    asm!("mov eax, $0" :: "m"(result) :: "intel");
 }

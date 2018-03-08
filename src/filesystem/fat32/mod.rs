@@ -31,9 +31,9 @@ impl Fat32 {
         self.ebpb.bpb.reserved_sectors_count as u64 + (self.ebpb.bpb.table_count as u32 * self.ebpb.sectors_per_fat) as u64
     }
 
-    fn get_bytes_in_cluster(&self) -> u32 {
+    fn get_bytes_in_cluster(&self) -> usize {
         //self.ebpb.bpb.sectors_per_cluster as u32 * self.ebpb.bpb.bytes_per_sector as u32
-        self.ebpb.bpb.sectors_per_cluster as u32 * self.ebpb.bpb.bytes_per_sector as u32
+        self.ebpb.bpb.sectors_per_cluster as usize * self.ebpb.bpb.bytes_per_sector as usize
     }
 
     fn first_sector_of_cluster(&self, cluster: u32) -> u64 {
@@ -113,41 +113,22 @@ impl Fat32 {
             return None;
         }
     }
-}
 
-impl Filesystem for Fat32 {
-    type FileType = Directory;
-
-    fn open_file(&self, drive: &Disk, file_name: &str) -> Option<FilePointer<Directory>> {
-        let mut path_components = file_name.split("/");
-        // let directories = self.read_folder(drive, self.ebpb.root_dir_cluster);
-        // println!("{:?}", directories);
-        if let Some(file) = self.find_file(drive, self.ebpb.root_dir_cluster, &mut path_components) {
-           // If the file is really a file
-            return Some(FilePointer {
-                current: 0,
-                file: file,
-            });
-        }
-        None
-    }
-
-    fn read_file(&self, drive: &Disk, file_pointer: &FilePointer<Self::FileType>, buffer: &mut [u8]) -> Option<usize> {
+    fn read_clusters(&self, drive: &Disk, fat_file: &FatDirectory, start_cluster: usize, buffer: &mut [u8]) -> usize {
         use core::cmp::min;
         let cluster_size = self.get_bytes_in_cluster() as usize;
-
-        // If the read buffer isn't a cluster_size multiplication we return None.
-        if buffer.len() % cluster_size != 0 {
-            return None;
-        }
         // Getting the file size in clusters
-        let file_size = file_pointer.get_file().get_size() / cluster_size + 1;
+        let file_size = fat_file.get_size() / cluster_size + 1;
         let read_size = buffer.len() / cluster_size;
 
         // If we don't try to read more than the file size
         // Get a cluster chain for the file
-        let starting_cluster = file_pointer.get_file().get_fat_dir().get_cluster();
-        let cluster_chain = ClusterChain::new(Cluster(starting_cluster), self, drive);
+        let first_cluster = fat_file.get_cluster();
+        let mut cluster_chain = ClusterChain::new(Cluster(first_cluster), self, drive);
+        if start_cluster != 0 {
+            // Consuming `starting_cluster` elements from the cluster chain
+            cluster_chain.nth(start_cluster-1);
+        }
 
         let mut part = 0;
         // Getting the cluster we should read from, if its out of the borders of the chain, return None
@@ -161,6 +142,37 @@ impl Filesystem for Fat32 {
             buffer[part*cluster_size..(part+1)*cluster_size].clone_from_slice(&temp_buffer);
             part += 1;
         }
-        return Some(part*cluster_size);
+
+        part*cluster_size
+    }
+}
+
+impl Filesystem for Fat32 {
+    type FileType = Directory;
+
+    fn open_file(&self, drive: &Disk, file_name: &str) -> Option<FilePointer<Directory>> {
+        let mut path_components = file_name.split("/");
+        // let directories = self.read_folder(drive, self.ebpb.root_dir_cluster);
+        // println!("{:?}", directories);
+        if let Some(file) = self.find_file(drive, self.ebpb.root_dir_cluster, &mut path_components) {
+           // If the file is really a file
+            return Some(FilePointer::new(0, file));
+        }
+        None
+    }
+
+    fn read_file(&self, drive: &Disk, file_pointer: &FilePointer<Self::FileType>, buffer: &mut [u8]) -> Option<usize> {
+        let first_cluster = file_pointer.get_current() / self.get_bytes_in_cluster() as usize;
+        let end_cluster = (file_pointer.get_current() + buffer.len()) / self.get_bytes_in_cluster();
+
+        let clusters_to_read = (first_cluster-end_cluster+1) * self.get_bytes_in_cluster();
+        let mut temp_buffer = vec![0u8;clusters_to_read];
+        self.read_clusters(drive, file_pointer.get_file().get_fat_dir(), first_cluster, &mut temp_buffer);
+        // println!("Temp Buffer: {}", ::core::str::from_utf8(&temp_buffer).unwrap());
+
+        let first_index = file_pointer.get_current() % self.get_bytes_in_cluster();
+        let last_index = first_index + buffer.len();
+        buffer.clone_from_slice(&temp_buffer[first_index..last_index]);
+        return Some(buffer.len());
     }
 }

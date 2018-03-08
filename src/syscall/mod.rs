@@ -19,20 +19,16 @@ const SYSCALL_METHOD: usize = 0xF0;
 const FILESYSTEM_CLASS: usize = 0x01;
 const CALL_OPEN: usize = 0x10;
 
-pub fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize) -> usize {
-    println!("Syscall received. ({}, {}, {}, {}, {}, {})", a, b, c, d, e, f);
+pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize) -> usize {
     let x = match a & SYSCALL_CLASS {
         FILESYSTEM_CLASS => { 
             let fd = b;
             match a & SYSCALL_METHOD {
                 CALL_OPEN => open(to_str(b, c)),
-                _ => Err(0xFFFFFFFF),
+                _ => 0xFFFFFFFF,
             }
         },
-        _ => Err(0xFFFFFFFF),
+        _ => 0xFFFFFFFF,
     };
-    if x.is_err() {
-        return x.unwrap_err() as usize;
-    }
-    return x.unwrap() as usize;
+    return x;
 }
