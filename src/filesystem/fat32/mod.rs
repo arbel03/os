@@ -92,9 +92,9 @@ impl Fat32 {
     fn find_file(&self, drive: &Disk, cluster: u32, path: &mut Split<&str>) -> Option<Directory> {
         if let Some(component) = path.next() {
             let current_dirs = self.read_folder(drive, cluster);
-            let names = current_dirs.iter().map(|x| x.get_name()).collect::<Vec<String>>();
-            println!("Searching {} in {:?}", component, names);
             let mut dir: &Directory;
+            // let names = current_dirs.iter().map(|x| x.get_name()).collect::<Vec<String>>();
+            // println!("Searching {} in {:?}", component, names);
             if let Some(found_dir) = current_dirs.iter().find(|dir| dir.get_name() == component) {
                 dir = found_dir;
             } else {
@@ -152,8 +152,6 @@ impl Filesystem for Fat32 {
 
     fn open_file(&self, drive: &Disk, file_name: &str) -> Option<FilePointer<Directory>> {
         let mut path_components = file_name.split("/");
-        // let directories = self.read_folder(drive, self.ebpb.root_dir_cluster);
-        // println!("{:?}", directories);
         if let Some(file) = self.find_file(drive, self.ebpb.root_dir_cluster, &mut path_components) {
            // If the file is really a file
             return Some(FilePointer::new(0, file));

@@ -1,0 +1,27 @@
+{
+	"arch": "x86",
+	"data-layout": "e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128",
+	"env": "gnu",
+	"dynamic-linking": false,
+	"executables": true,
+	"has-elf-tls": true,
+	"is-builtin": false,
+	"linker-flavor": "ld",
+	"linker-is-gnu": true,
+	"llvm-target": "i386-unknown-linux-gnu",
+	"max-atomic-width": 32,
+	"os": "linux",
+	"position-independent-executables": true,
+	"pre-link-args": [
+		"-Wl,--as-needed",
+		"-Wl,-z,noexecstack",
+		"-m elf_i386"
+	],
+	"relro-level": "full",
+	"stack-probes": true,
+	"target-c-int-width": "32",
+	"target-endian": "little",
+	"target-family": "unix",
+	"target-pointer-width": "32",
+	"vendor": "unknown"
+  }

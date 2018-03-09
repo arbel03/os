@@ -19,6 +19,7 @@ const SYSCALL_METHOD: usize = 0xF0;
 const FILESYSTEM_CLASS: usize = 0x01;
 const CALL_OPEN: usize = 0x10;
 
+#[allow(unused_variables)]
 pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize) -> usize {
     let x = match a & SYSCALL_CLASS {
         FILESYSTEM_CLASS => { 

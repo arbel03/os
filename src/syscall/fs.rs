@@ -1,5 +1,6 @@
 use filesystem::FILESYSTEM;
 
+#[allow(dead_code)]
 #[repr(usize)]
 pub enum FilesystemErr {
     NoFile = 0x1,

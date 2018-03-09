@@ -12,6 +12,7 @@
 
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+#![allow(dead_code)]
 
 pub unsafe fn syscall0(mut a: usize) -> usize {
     asm!("int 0x80"

@@ -1,0 +1,5 @@
+[target.i386-unknown-linux-gnu]
+linker = "i386-elf-ld"
+
+[target.target]
+linker = "i386-elf-ld"

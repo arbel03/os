@@ -11,8 +11,8 @@
 #![feature(core_intrinsics)]
 #![feature(use_extern_macros)]
 #![feature(naked_functions)]
-#![no_std]
 #![allow(safe_packed_borrows)]
+#![no_std]
 
 #[macro_use]
 extern crate alloc;
@@ -28,6 +28,7 @@ mod interrupts;
 mod memory;
 mod filesystem;
 mod syscall;
+mod task;
 
 pub use interrupts::syscall::syscall_handler_inner;
 
@@ -55,16 +56,8 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
 
     filesystem::init();
 
-    // Test filesystem syscalls
-    use syscall::fs::{ open, read, seek };
-    let mut read_buffer = vec![0u8;20];
-    unsafe {
-        let fd = open("TESTFILETXT");
-        seek(fd, 540);
-        read(fd, &mut read_buffer);
-    }
-    println!("Read Buffer: {}", core::str::from_utf8(&read_buffer).unwrap());
-
+    task::loader::load_elf("HELLO/TARGET/TARGET/DEBUG/HELLO");
+    
     loop {};
 }
 

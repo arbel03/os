@@ -7,11 +7,8 @@
 	"os": "none",
 	"arch": "x86",
 	"linker-flavor": "ld",
-	"pre-link-args": ["-m32"],
-	"no-compiler-rt": true,
 	"eliminate-frame-pointer": false,		
 	"disable-redzone": true,
-  	"features": "-sse,+soft-float",
+  	"features": "-sse,-mmx,+soft-float",
 	"panic-strategy": "abort"
-
 }

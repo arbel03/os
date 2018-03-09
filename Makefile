@@ -4,19 +4,18 @@ rust_os := target/$(target)/debug/libsos.a
 assembly_source_files := $(wildcard src/arch/*.asm)
 assembly_object_files := $(patsubst src/arch/%.asm, build/arch/%.o, $(assembly_source_files))
 
-filesystem_head := build/head.bin
 kernel := build/kernel.bin
 
-.PHONY: clean all run cargo head
+.PHONY: clean xargo head
 
 head: $(kernel)
 	@mkdir -p build
 	@nasm -f bin -o build/head.bin -i bootloader/ bootloader/src/bootloader.asm
 
-$(kernel): cargo $(rust_os) $(assembly_object_files)
+$(kernel): xargo $(rust_os) $(assembly_object_files)
 	@$(LD) -n --gc-sections -m elf_i386 -T linker.ld -o $@ $(assembly_object_files) $(rust_os)
 
-cargo:
+xargo:
 	@export RUST_TARGET_PATH=$(shell pwd); xargo build --target $(target)
 
 clean:

@@ -1,5 +1,7 @@
 // ELF-32 bit implementation
 
+#[derive(Default, Debug)]
+#[repr(packed)]
 pub struct ElfHeader {
     magic: [u8; 4],
     class: u8,
@@ -8,12 +10,12 @@ pub struct ElfHeader {
     os_abi: u8,
     abi_version: u8,
     unused: [u8; 7],
-    type: u16,
+    elf_type: u16,
     machine: u16,
     version2: u32,
     entry_point: u32,
     phoff: u32, // Program Header offset
-    shoff: u32 // Section Header offset
+    shoff: u32, // Section Header offset
     flags: u32,
     header_size: u16,
     phentsize: u16, // Program Header entry size
@@ -23,23 +25,24 @@ pub struct ElfHeader {
     e_shstrndx: u16,
 }
 
-#[repr(packed, u32)]
+#[repr(u32)]
+#[allow(dead_code)]
 pub enum ProgramEntryType {
-    PT_NULL = 0x00000000,
-    PT_LOAD = 0x00000001,
-    PT_DYNAMIC = 0x00000002,
-    PT_INTERP = 0x00000003,
-    PT_NOTE = 0x00000004,
-    PT_SHLIB = 0x00000005,
-    PT_PHDR = 0x00000006,
-    PT_LOOS = 0x60000000,
-    PT_HIOS = 0x6FFFFFFF,
-    PT_LOPROC = 0x70000000,
-    PT_HIPROC = 0x7FFFFFFF,
+    PtNull = 0x00000000,
+    PtLoad = 0x00000001,
+    PtDynamic = 0x00000002,
+    PtInterp = 0x00000003,
+    PtNote = 0x00000004,
+    PtShlib = 0x00000005,
+    PtPhdr = 0x00000006,
+    PtLoos = 0x60000000,
+    PtHios = 0x6FFFFFFF,
+    PtLoproc = 0x70000000,
+    PtHiproc = 0x7FFFFFFF,
 }
 
 pub struct ProgramHeaderEntry {
-    type: ProgramEntryType,
+    entry_type: ProgramEntryType,
     offset: u32, // offset to segment in file image
     vaddr: u32, // Virtual address in memory
     paddr: u32, // Physical address in memory

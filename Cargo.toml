@@ -2,7 +2,7 @@
 name = "sos"
 version = "0.0.0"
 authors = ["Arbel Israeli <arbel03@gmail.com>"]
-exclude = ["src/arch/*.asm"]
+exclude = ["src/arch/*.asm", "filesystem/*"]
 
 [lib]
 crate-type = ["staticlib"]
@@ -11,6 +11,3 @@ crate-type = ["staticlib"]
 rlibc = "1.0"
 spin = "0.4.5"
 bitmap_allocator = { path = "bitmap_allocator" }
-
-[profile.dev]
-opt-level=0
