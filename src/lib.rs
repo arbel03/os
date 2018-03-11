@@ -50,11 +50,13 @@ static HEAP: Heap = Heap::new(BitmapAllocator::new(0x1000000, 1024*100)); // 100
 pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     vga_buffer::clear_screen();
     
-    memory::init(bootloader_info); 
+    let free_memory_areas = memory::init(bootloader_info); 
     drivers::configure();
     interrupts::init();
 
     filesystem::init();
+    // Initializing tasks with free memory areas
+    task::init(free_memory_areas);
 
     task::loader::load_elf("HELLO/TARGET/TARGET/DEBUG/HELLO");
     

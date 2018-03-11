@@ -45,7 +45,6 @@ impl DescriptorTable {
         let gdt_entries = self.0.deref();
         // Loading gdt
         let gdtr = TableDescriptor::new(gdt_entries);
-        println!("Gdtr: {:?}", gdtr);
         lgdt(&gdtr);
     }
 }

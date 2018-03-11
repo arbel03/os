@@ -163,7 +163,6 @@ impl Idt {
         use core::slice;
         let idt_slice = slice::from_raw_parts(self as *const _ as *const IdtEntry, 256);
         let idtr = TableDescriptor::new(idt_slice);
-        println!("Idtr: {:?}", idtr);
         lidt(&idtr);
     }
 }
