@@ -1,2 +1,5 @@
-[target.i686-unknown-linux-gnu]
-linker = "i686-elf-gcc"
+[target.i686-unknown-linux-musl]
+linker = "gcc"
+rustflags = [
+    "-C", "link-args=-m32"
+]

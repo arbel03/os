@@ -1,2 +1,2 @@
-[target.i686-unknown-linux-gnu.dependencies.std]
-features = ["jemalloc"]
+[dependencies]
+std = { features = ["jemalloc"] }

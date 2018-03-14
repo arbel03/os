@@ -27,4 +27,4 @@ build/arch/%.o: src/arch/%.asm
 	@nasm -f elf32 -o $@ $<
 
 filesystem:
-	@cd filesystem; xargo rustc --target=i686-unknown-linux-gnu -C linker=i686-elf-gcc
+	@cd filesystem; cargo build --target=i686-unknown-linux-musl
