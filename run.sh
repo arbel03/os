@@ -22,6 +22,7 @@ attach_kernel() {
 }
 
 create_filesystem() {
+    echo "Reserved sectors"
     # Unmounting
     sudo umount /mnt || true
 
@@ -30,7 +31,7 @@ create_filesystem() {
     
     # Getting the size of FILESYSTEM_HEAD
     RESEREVED_SECTORS=$(filesize_in_sectors $FILESYSTEM_HEAD)
-
+    
     export PATH=/sbin:$PATH
     # Creating an empty Fat32 filesystem
     mkfs.fat -F 32 -R $RESEREVED_SECTORS $FILESYSTEM
@@ -61,17 +62,23 @@ run() {
         LD="ld"
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         BLOCK_SIZE="1m"
-        LD="i386-elf-ld"
+        LD="i686-elf-ld"
     fi
+    echo "Compiling Kernel and Bootloader..."
     # Compiling bootloader and kernel into a single file
     make head LD=$LD
     success=$?
     # If there is no error in compiling the kernel
     if [ $success -ne 2 ]; then
+        echo "Creating filesystem."
         # Creating a filesystem Fat32 file with reserved sectors the size of the bootloader+kernel
-        create_filesystem
+        create_filesystem > /dev/null 2> /dev/null
+        echo "Created filesystem."
+        echo "Attaching kernel."
         # Attaching the kernel to the filesystem file
-        attach_kernel
+        attach_kernel > /dev/null 2> /dev/null
+        echo "Kernel attached."
+        echo "Running operating system."
         # Running
         qemu-system-i386 -drive file=$OS_FILE,format=raw
     fi

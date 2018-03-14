@@ -1,6 +1,6 @@
 {
 	"data-layout": "e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128",
-	"llvm-target": "i386-unknown-none",
+	"llvm-target": "i686-unknown-linux-gnu",
 	"target-endian": "little",
 	"target-pointer-width": "32",
 	"target-c-int-width": "32",
@@ -10,5 +10,6 @@
 	"eliminate-frame-pointer": false,		
 	"disable-redzone": true,
   	"features": "-sse,-mmx,+soft-float",
-	"panic-strategy": "abort"
+	"panic-strategy": "abort",
+	"executables": true
 }

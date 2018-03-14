@@ -1,0 +1,2 @@
+[target.i686-unknown-linux-gnu.dependencies.std]
+features = ["jemalloc"]

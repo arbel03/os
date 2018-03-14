@@ -1,6 +1,9 @@
 [package]
-name = "hello"
+name = "binaries"
 version = "0.1.0"
 authors = ["Arbel Israeli <arbel03@gmail.com>"]
 
 [dependencies]
+
+[profile.release]
+panic = "abort"

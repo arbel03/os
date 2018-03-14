@@ -21,7 +21,7 @@ pub struct MemoryMapEntry {
     pub base: u64,
     pub size: u64,
     pub region_type: u32,
-    acpi_info: u32,
+    _acpi_info: u32,
 }
 
 #[derive(Clone, Copy)]
@@ -77,7 +77,7 @@ impl MemoryAreas {
 
     pub fn insert(&mut self, memory_area: MemoryArea) {
         match self.0.binary_search(&memory_area) {
-            Ok(pos) => {} // element already in vector @ `pos` 
+            Ok(_) => {} // element already in vector @ `pos` 
             Err(pos) => self.0.insert(pos, memory_area),
         }  
     }

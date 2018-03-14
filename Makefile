@@ -1,4 +1,5 @@
-target ?= target
+arch ?= i686
+target := $(arch)-os
 rust_os := target/$(target)/debug/libsos.a
 
 assembly_source_files := $(wildcard src/arch/*.asm)
@@ -6,7 +7,7 @@ assembly_object_files := $(patsubst src/arch/%.asm, build/arch/%.o, $(assembly_s
 
 kernel := build/kernel.bin
 
-.PHONY: clean xargo head
+.PHONY: clean xargo head filesystem
 
 head: $(kernel)
 	@mkdir -p build
@@ -24,3 +25,6 @@ clean:
 build/arch/%.o: src/arch/%.asm
 	@mkdir -p $(dir $@)
 	@nasm -f elf32 -o $@ $<
+
+filesystem:
+	@cd filesystem; xargo rustc --target=i686-unknown-linux-gnu -C linker=i686-elf-gcc
