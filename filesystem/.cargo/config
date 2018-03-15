@@ -1,5 +1,6 @@
 [target.i686-unknown-linux-musl]
 linker = "i686-elf-gcc"
 rustflags = [
-    "-C", "link-args=-m32"
+    "-C", "link-arg=-Wl,-Ttext=0x0",
+    "-C", "link-arg=-Wl,--gc-sections",
 ]

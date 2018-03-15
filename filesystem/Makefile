@@ -1,19 +1,18 @@
 bin_target := i686-unknown-linux-musl
-bin_names := hello
-debug_bin_files := $(patsubst %, filesystem/target/$(bin_target)/debug/%, $(bin_names))
+bin_names := hello1 hello2
+bin_files := $(patsubst %, build/isofiles/bin/%, $(bin_names))
 
-.PHONY: filesystem xargo-bin
+.PHONY: filesystem
 
-filesystem: xargo-bin move-bins
+filesystem: xargo-bin $(bin_files)
 
 xargo-bin: 
-	@cd filesystem; cargo build --target=$(bin_target) --bin hello
-
-move-bins: $(debug_bin_files)
-	@echo "Copying $< to build/isofiles"
-	@mkdir -p build/isofiles
-	@cp $< build/isofiles/bin
+	@cd filesystem; cargo build --target=$(bin_target) --bins -v
 
 clean-filesystem:
 	@cargo clean
-	@rm -rf filesystem/target
+	@rm -r filesystem/target/
+
+build/isofiles/bin/%: filesystem/target/$(bin_target)/debug/%
+	@mkdir -p build/isofiles/bin
+	@cp $< $@

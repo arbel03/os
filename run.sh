@@ -53,6 +53,7 @@ create_filesystem() {
 	    hdiutil detach $MOUNT_POINT
     fi
     sudo umount /mnt || true
+    rm -r build/isofiles
 }
 
 run() {
@@ -73,11 +74,11 @@ run() {
     if [ $success -ne 2 ]; then
         echo "Creating filesystem."
         # Creating a filesystem Fat32 file with reserved sectors the size of the bootloader+kernel
-        create_filesystem > /dev/null 2> /dev/null
+        create_filesystem
         echo "Created filesystem."
         echo "Attaching kernel."
         # Attaching the kernel to the filesystem file
-        attach_kernel > /dev/null 2> /dev/null
+        attach_kernel
         echo "Kernel attached."
         echo "Running operating system."
         # Running

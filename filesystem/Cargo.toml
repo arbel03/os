@@ -9,5 +9,9 @@ authors = ["Arbel Israeli <arbel03@gmail.com>"]
 panic = "abort"
 
 [[bin]]
-name = "hello"
-path = "hello.rs"
+name = "hello1"
+path = "hello1.rs"
+
+[[bin]]
+name = "hello2"
+path = "hello2.rs"

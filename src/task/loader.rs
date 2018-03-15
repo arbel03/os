@@ -24,15 +24,29 @@ pub fn load_elf(file_name: &str) {
     // Test filesystem syscalls
     let mut elf_header = ElfHeader::default();
     let entries: Vec<ProgramHeaderEntry>;
+    let fd: usize;
     unsafe {
-        let fd = open(file_name);
+        fd = open(file_name);
         read_header(fd, &mut elf_header);
+        if !elf_header.is_valid() {
+            panic!("Not a valid ELF file.");
+        }
         entries = read_ph_entries(fd, &elf_header);
     }
-    //println!("Elf header of {}\n{:?}", file_name, elf_header);
-    println!("Entries count: {}", &entries.len());
-    for (index, entry) in entries.iter().enumerate() {
-        println!("Entry #{} {:?}", index, entry);
+
+    println!("Entry Address: {:#x}", elf_header.entry_point);
+    for entry in entries.iter() {
+        let entry_type = entry.entry_type.get_type();
+        if entry_type == EntryType::PtLoad {
+            // Loading segment from disk to memory.
+            let slice = unsafe { slice::from_raw_parts_mut(entry.vaddr as *mut u8, entry.file_size as usize) };
+            println!("Section starting at {:?}, size: {:#x}", slice.as_ptr(), slice.len());
+            // unsafe { 
+            //     seek(fd, entry.offset as usize);
+            //     read(fd, slice);
+            // }
+        }
     }
+
 }
 

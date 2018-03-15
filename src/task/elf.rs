@@ -13,7 +13,7 @@ pub struct ElfHeader {
     elf_type: u16,
     machine: u16,
     version2: u32,
-    entry_point: u32,
+    pub entry_point: u32,
     pub phoff: u32, // Program Header offset
     shoff: u32, // Section Header offset
     flags: u32,
@@ -25,7 +25,14 @@ pub struct ElfHeader {
     e_shstrndx: u16,
 }
 
+impl ElfHeader {
+    pub fn is_valid(&self) -> bool {
+        self.magic == [0x7f, 0x45, 0x4c, 0x46]
+    }
+}
+
 #[allow(dead_code)]
+#[derive(Debug, PartialEq)]
 pub enum EntryType {
     PtNull,
     PtLoad,
@@ -34,14 +41,13 @@ pub enum EntryType {
     PtNote,
     PtShlib,
     PtPhdr,
-    PtLoproc,
-    PtHiproc,
     Unknown,
-    PtLoos(u32),
+    PtLoHiproc(u32),
+    PtLoHios(u32),
 }
 
-#[repr(packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
+#[repr(packed, C)]
 pub struct ProgramEntryType(u32);
 
 impl ProgramEntryType {
@@ -55,25 +61,24 @@ impl ProgramEntryType {
             0x00000004 => EntryType::PtNote,
             0x00000005 => EntryType::PtShlib,
             0x00000006 => EntryType::PtPhdr,
-            0x70000000 => EntryType::PtLoproc,
-            0x7FFFFFFF => EntryType::PtHiproc,
-            0x60000000...0x6FFFFFFF => EntryType::PtLoos(val),
+            0x70000000...0x7FFFFFFF => EntryType::PtLoHiproc(val),
+            0x60000000...0x6FFFFFFF => EntryType::PtLoHios(val),
             _ => EntryType::Unknown,
         }
     }
 }
 
-#[repr(packed)]
+#[repr(packed, C)]
 #[derive(Debug, Clone)]
 pub struct ProgramHeaderEntry {
     pub entry_type: ProgramEntryType,
-    offset: u32, // offset to segment in file image
-    vaddr: u32, // Virtual address in memory
-    paddr: u32, // Physical address in memory
-    file_size: u32, // Size of segment in file
-    mem_size: u32, // Size of segment in memory
-    flags: u32,
-    align: u32,
+    pub offset: u32, // offset to segment in file image
+    pub vaddr: u32, // Virtual address in memory
+    pub paddr: u32, // Physical address in memory
+    pub file_size: u32, // Size of segment in file
+    pub mem_size: u32, // Size of segment in memory
+    pub flags: u32,
+    pub align: u32,
 }
 
 impl ProgramHeaderEntry {

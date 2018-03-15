@@ -58,7 +58,7 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     // Initializing tasks with free memory areas
     task::init(free_memory_areas);
 
-    task::loader::load_elf("bin/hello");
+    task::loader::load_elf("bin/hello2");
     
     loop {};
 }

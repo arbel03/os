@@ -163,10 +163,11 @@ impl Filesystem for Fat32 {
         let first_cluster = file_pointer.get_current() / self.get_bytes_in_cluster() as usize;
         let end_cluster = (file_pointer.get_current() + buffer.len()) / self.get_bytes_in_cluster();
 
-        let clusters_to_read = (first_cluster-end_cluster+1) * self.get_bytes_in_cluster();
+        // println!("Reading from {} to {}", first_cluster, end_cluster);
+        let clusters_to_read = (end_cluster-first_cluster+1) * self.get_bytes_in_cluster();
         let mut temp_buffer = vec![0u8;clusters_to_read];
         self.read_clusters(drive, file_pointer.get_file().get_fat_dir(), first_cluster, &mut temp_buffer);
-        // println!("Temp Buffer: {}", ::core::str::from_utf8(&temp_buffer).unwrap());
+        // println!("Temp Buffer: {}", unsafe { ::core::str::from_utf8_unchecked(&temp_buffer) });
 
         let first_index = file_pointer.get_current() % self.get_bytes_in_cluster();
         let last_index = first_index + buffer.len();
