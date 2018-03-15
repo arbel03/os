@@ -7,3 +7,7 @@ authors = ["Arbel Israeli <arbel03@gmail.com>"]
 
 [profile.release]
 panic = "abort"
+
+[[bin]]
+name = "hello"
+path = "hello.rs"

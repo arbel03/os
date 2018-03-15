@@ -1,3 +1,5 @@
+include filesystem/Makefile
+
 arch ?= i686
 target := $(arch)-os
 rust_os := target/$(target)/debug/libsos.a
@@ -19,12 +21,10 @@ $(kernel): xargo $(rust_os) $(assembly_object_files)
 xargo:
 	@export RUST_TARGET_PATH=$(shell pwd); xargo build --target $(target)
 
-clean:
+clean: clean-filesystem
 	@xargo clean
+	@rm -r build
 
 build/arch/%.o: src/arch/%.asm
 	@mkdir -p $(dir $@)
 	@nasm -f elf32 -o $@ $<
-
-filesystem:
-	@cd filesystem; cargo build --target=i686-unknown-linux-musl

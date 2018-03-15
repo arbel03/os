@@ -38,7 +38,8 @@ create_filesystem() {
 
     mkdir -p build/isofiles
 
-    cp -r filesystem/. build/isofiles
+    # Generating binary files and adding them to `build/isofiles`` folder
+    make filesystem
 
     # Mounting the file and copying files to it
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
