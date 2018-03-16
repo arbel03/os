@@ -4,7 +4,7 @@ section .text
 bits 32
 start:
 	; Setting up a stack
-	mov esp, 0x90000
+	mov esp, 0x9fc00
 	mov ebp, esp
 
 	push ebx

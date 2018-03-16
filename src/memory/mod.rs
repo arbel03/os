@@ -12,9 +12,9 @@ extern {
     fn gdt_flush();
 }
 
-static mut GDT: Option<DescriptorTable> = None;
+static mut GDT: DescriptorTable = DescriptorTable::new();
 
-pub fn setup_descriptors(bootloader_info: &BootloaderInfo) {
+pub fn setup_descriptors(bootloader_info: &BootloaderInfo, free_memory_areas: &MemoryAreas) {
     let mut descriptors: Vec<SegmentDescriptor> = Vec::new();
     // Null descriptor
     descriptors.push(SegmentDescriptor::NULL);
@@ -22,16 +22,18 @@ pub fn setup_descriptors(bootloader_info: &BootloaderInfo) {
     descriptors.push(SegmentDescriptor::new(0, bootloader_info.kernel_end, 0x9A, 0xC));
     // Kernel Data Segment
     descriptors.push(SegmentDescriptor::new(0, bootloader_info.kernel_end, 0x92, 0xC));
+    for memory_area in (&free_memory_areas).0.iter() {
+        descriptors.push(SegmentDescriptor::new(memory_area.base as u32, memory_area.size as u32, 0b11111010, 0xC))
+    }
 
     unsafe {
-        // Initialize a new DescriptorTable
-        GDT = Some(DescriptorTable::new());
-        // Get a reference to the boxed value that DescriptorTable holds
-        let table = GDT.as_mut().unwrap();
         // Set and load the table
-        table.set_entries(descriptors);
-        table.load();
-        gdt_flush();
+        GDT.set_entries(descriptors);
+        GDT.load();
+        load_ds(SegmentSelector::new(2, SegmentTable::GDT, 0));
+        // TODO: setup stack in a whole different segment to detect stack overflows
+        load_ss(SegmentSelector::new(2, SegmentTable::GDT, 0));
+        load_cs(SegmentSelector::new(1, SegmentTable::GDT, 0));
     }
 }
 
@@ -73,9 +75,9 @@ pub fn init(bootloader_info: &BootloaderInfo) -> MemoryAreas {
     (*HEAP).lock().set_size(heap_size);
     println!("Setup Heap at {:#08x}, size: {:#08x}", heap_start, heap_size);
 
-    setup_descriptors(bootloader_info);
+    let free_memory_areas = get_free_memory_areas(memory_iter, bootloader_info);
+    setup_descriptors(bootloader_info, &free_memory_areas);
 
     // Returning the rest of the free memory areas
-    // TODO: Return free memory areas, not occupied by the kernel or the heap.
-    return get_free_memory_areas(memory_iter, bootloader_info); 
+    return free_memory_areas;
 }

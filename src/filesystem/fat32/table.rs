@@ -46,7 +46,7 @@ pub enum FatEntry {
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub struct Cluster(pub u32);
+pub struct Cluster(pub usize);
 
 pub struct ClusterChain<'a> {
     current_entry: FatEntry,
@@ -74,9 +74,9 @@ impl <'a> ClusterChain<'a> {
         // Each entry is 4 bytes
         let fat_offset = current.0 * 4;
         // Finding the sector we need to access, this works because integers division produces an integer
-        let fat_sector = self.fat.ebpb.bpb.reserved_sectors_count as u32 + (fat_offset / sector_size as u32);
+        let fat_sector = self.fat.ebpb.bpb.reserved_sectors_count as usize + (fat_offset / sector_size);
         // Offset within the chosen sector
-        let ent_offset = fat_offset % sector_size as u32;
+        let ent_offset = fat_offset % sector_size;
         // Loading sector into fat_table vector and getting the table value
         let table_value = unsafe {
             self.drive.read(fat_sector as u64, &mut fat_table).expect("Unknown error.");
@@ -91,7 +91,7 @@ impl <'a> ClusterChain<'a> {
             return FatEntry::BadBlock;
         } else {
             // FatEntry pointing to the next index in the table
-            return FatEntry::Node(Cluster(table_value));
+            return FatEntry::Node(Cluster(table_value as usize));
         }
     }
 }

@@ -22,6 +22,7 @@ syscall_handler:
     pop edx
     pop ecx
     pop ebx
+    ; Dont pop eax
     add esp, 4
 
     iretd

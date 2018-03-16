@@ -44,7 +44,7 @@ pub struct BootloaderInfo {
 use memory::heap::Heap;
 use bitmap_allocator::BitmapAllocator;
 #[global_allocator]
-static HEAP: Heap = Heap::new(BitmapAllocator::new(0x1000000, 1024*100)); // 100 KB
+static HEAP: Heap = Heap::new(BitmapAllocator::new(0x1000000, 1024*100, core::mem::size_of::<usize>()*4)); // 100 KB
 
 #[no_mangle]
 pub extern fn kmain(bootloader_info: &BootloaderInfo) {
@@ -58,7 +58,9 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     // Initializing tasks with free memory areas
     task::init(free_memory_areas);
 
-    task::loader::load_elf("bin/hello2");
+    unsafe {
+        task::loader::load_elf("bin/hello2");
+    }
     
     loop {};
 }

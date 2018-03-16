@@ -18,16 +18,16 @@ use alloc::allocator::{ Alloc, Layout, AllocErr };
 pub struct BitmapAllocator {
     bitmap_start: usize,
     block_count: usize,
+    block_size: usize,
 }
 
 impl BitmapAllocator {
-    const BLOCK_SIZE: usize = mem::size_of::<usize>()*4;
-
-    // total_size = block_count * (cell_size + BLOCK_SIZE)
-    pub const fn new(start: usize, size: usize) -> Self {
+    // total_size = block_count * (cell_size + block_size)
+    pub const fn new(start: usize, size: usize, block_size: usize) -> Self {
         BitmapAllocator {
             bitmap_start: start,
-            block_count: size / (mem::size_of::<CellState>() + BitmapAllocator::BLOCK_SIZE),
+            block_count: size / (mem::size_of::<CellState>() + block_size),
+            block_size: block_size,
         }
     }
 
@@ -36,7 +36,7 @@ impl BitmapAllocator {
     }
 
     pub fn set_size(&mut self, size: usize) {
-        self.block_count = size / (mem::size_of::<CellState>() + BitmapAllocator::BLOCK_SIZE);
+        self.block_count = size / (mem::size_of::<CellState>() + self.block_size);
     }
 
     pub fn init(&mut self) {
@@ -77,14 +77,14 @@ unsafe impl Alloc for BitmapAllocator {
                 cell_index = None;
             }
 
-            if (continuous_count * BitmapAllocator::BLOCK_SIZE) >= requested_size {
+            if (continuous_count * self.block_size) >= requested_size {
                 break;                
             }
         }
         
         if let Some(cell_index) = cell_index {
-            if continuous_count * BitmapAllocator::BLOCK_SIZE >= requested_size {
-                let block_address = cell_index * BitmapAllocator::BLOCK_SIZE + self.get_data_start();
+            if continuous_count * self.block_size >= requested_size {
+                let block_address = cell_index * self.block_size + self.get_data_start();
                 let alloc_start = align_up(block_address, layout.align());
 
                 *self.get_cell(cell_index) = CellState::Boundary;
@@ -103,7 +103,7 @@ unsafe impl Alloc for BitmapAllocator {
 
     #[allow(unused_variables)]
     unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
-        let mut starting_block = (ptr as usize-self.get_data_start()) / BitmapAllocator::BLOCK_SIZE;
+        let mut starting_block = (ptr as usize-self.get_data_start()) / self.block_size;
         while *self.get_cell(starting_block) != CellState::Boundary {
             starting_block -= 1;
         }
