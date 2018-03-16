@@ -17,24 +17,23 @@ filesize_in_sectors() {
 attach_kernel() {
     RESEREVED_SECTORS=$(filesize_in_sectors $FILESYSTEM_HEAD)
     cat $FILESYSTEM_HEAD > $OS_FILE
-    dd if=$FILESYSTEM of=$OS_FILE count=1 bs=90 conv=notrunc
-    dd if=$FILESYSTEM skip=$RESEREVED_SECTORS bs=512 >> $OS_FILE
+    dd if=$FILESYSTEM of=$OS_FILE count=1 bs=90 conv=notrunc 2> /dev/null
+    dd if=$FILESYSTEM skip=$RESEREVED_SECTORS bs=512 >> $OS_FILE 2> /dev/null
 }
 
 create_filesystem() {
-    echo "Reserved sectors"
     # Unmounting
-    sudo umount /mnt || true
+    (sudo umount /mnt || true) 2> /dev/null
 
     # Creating empty disk image with a size of 5mb
-    dd if=/dev/zero of=$FILESYSTEM bs=$BLOCK_SIZE count=34
+    dd if=/dev/zero of=$FILESYSTEM bs=$BLOCK_SIZE count=34 2> /dev/null
     
     # Getting the size of FILESYSTEM_HEAD
     RESEREVED_SECTORS=$(filesize_in_sectors $FILESYSTEM_HEAD)
     
     export PATH=/sbin:$PATH
     # Creating an empty Fat32 filesystem
-    mkfs.fat -F 32 -R $RESEREVED_SECTORS $FILESYSTEM
+    mkfs.fat -F 32 -R $RESEREVED_SECTORS $FILESYSTEM > /dev/null
 
     mkdir -p build/isofiles
 
@@ -50,9 +49,10 @@ create_filesystem() {
         echo "Mounting $FILESYSTEM to $MOUNT_POINT"
 	    sudo mount -t msdos $MOUNT_POINT /mnt
 	    sudo cp -r build/isofiles/. /mnt
-	    hdiutil detach $MOUNT_POINT
+	    hdiutil detach $MOUNT_POINT > /dev/null
     fi
-    sudo umount /mnt || true
+    # Unmounting
+    (sudo umount /mnt || true) 2> /dev/null
     rm -r build/isofiles
 }
 

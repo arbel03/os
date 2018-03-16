@@ -1,18 +1,18 @@
 bin_target := i686-unknown-linux-musl
 bin_names := hello1 hello2
-bin_files := $(patsubst %, build/isofiles/bin/%, $(bin_names))
+bin_files := $(patsubst %, filesystem/target/$(bin_target)/debug/%, $(bin_names))
 
 .PHONY: filesystem
 
-filesystem: xargo-bin $(bin_files)
+filesystem: xargo-bin copy-bins
 
 xargo-bin: 
-	@cd filesystem; cargo build --target=$(bin_target) --bins -v
+	@cd filesystem; cargo build --target=$(bin_target) --bins
 
 clean-filesystem:
 	@cargo clean
 	@rm -r filesystem/target/
 
-build/isofiles/bin/%: filesystem/target/$(bin_target)/debug/%
+copy-bins:
 	@mkdir -p build/isofiles/bin
-	@cp $< $@
+	@cp $(bin_files) build/isofiles/bin
