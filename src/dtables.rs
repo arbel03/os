@@ -61,6 +61,13 @@ impl <T: Default> DescriptorTable<T> {
         self.table = Some(vec.into_boxed_slice())
     }
 
+    pub fn set_descriptors<S: Encodable<T>>(&mut self, descriptors: Vec<S>) {
+        self.init_with_length(descriptors.len());
+        for (index, descriptor) in descriptors.into_iter().enumerate() {
+            self.insert(index, descriptor);
+        }
+    }
+
     pub fn as_ref(&self) -> Option<&[T]> {
         if let Some(boxed_slice) = self.table.as_ref() {
             return Some(boxed_slice);

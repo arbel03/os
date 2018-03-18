@@ -17,16 +17,17 @@ pub enum TableType {
     LDT = 1,
 }
 
-pub struct SegmentSelector(pub u16);
+pub struct SegmentSelector;
 
 impl SegmentSelector {
-    pub const fn new(index: usize, table: TableType, protection_level: usize) -> Self {
-        SegmentSelector(((index << 3) | ((table as usize) << 2) | (protection_level)) as u16)
+    pub const fn new(index: usize, table: TableType, protection_level: usize) -> u32 {
+        ((index << 3) | ((table as usize) << 2) | (protection_level)) as u16 as u32
     }
 }
 
 // Segment Descriptor
 
+#[derive(Debug)]
 pub struct SegmentDescriptor {
     pub base: u32,
     pub limit: u32,

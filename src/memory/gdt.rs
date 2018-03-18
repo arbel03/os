@@ -10,7 +10,7 @@ pub trait Gdt {
     fn init(&mut self);
     fn set_tss(&mut self, tss: &TaskStateSegment);
     fn set_ldt(&mut self, ldt: &SegmentDescriptorTable);
-    fn get_selector(&self, segment_type: SegmentType, privilege_level: usize) -> SegmentSelector;
+    fn get_selector(&self, segment_type: SegmentType, privilege_level: usize) -> u32;
     fn set_descriptor(&mut self, segment_type: SegmentType, descriptor: SegmentDescriptor);
     unsafe fn load(&self);
 }
@@ -28,21 +28,25 @@ impl Gdt for SegmentDescriptorTable {
     }
 
     fn set_tss(&mut self, tss: &TaskStateSegment) {
+        // GDT entry should look like this:
+        // 00000000 00000000 00000000 01100111
+        // 00000000 10000000 10001001 00000000
         let tss_size = ::core::mem::size_of::<TaskStateSegment>() as u32;
-        self.insert(SegmentType::TssDescriptor as usize, SegmentDescriptor::new(tss as *const _ as u32, tss_size, 0xE9, 0x0));
+        self.insert(SegmentType::TssDescriptor as usize, SegmentDescriptor::new(tss as *const _ as u32, tss_size, 0b11101001, 0b1000));
     }
 
     fn set_ldt(&mut self, ldt: &SegmentDescriptorTable) {
+        // GDT entry should look like this:
+        // 00000000 00000000 00000000 00001111
+        // 00000000 10000000 10000010 00000000 
         let table_descriptor = TableDescriptor::new(ldt);
-        // This descriptor should change in the future
-        self.insert(SegmentType::LdtDescriptor as usize, SegmentDescriptor::new(table_descriptor.ptr, table_descriptor.limit as u32, 0b0000010, 0x0000));
+        self.insert(SegmentType::LdtDescriptor as usize, SegmentDescriptor::new(table_descriptor.ptr, table_descriptor.limit as u32 + 1, 0b10000010 , 0b1000));
     }
-
     fn set_descriptor(&mut self, segment_type: SegmentType, descriptor: SegmentDescriptor) {
         self.insert(segment_type as usize, descriptor);
     }
 
-    fn get_selector(&self, segment_type: SegmentType, privilege_level: usize) -> SegmentSelector {
+    fn get_selector(&self, segment_type: SegmentType, privilege_level: usize) -> u32 {
         SegmentSelector::new(segment_type as usize, TableType::GDT, privilege_level)
     }
 

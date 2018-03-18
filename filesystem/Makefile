@@ -1,5 +1,5 @@
 bin_target := i686-unknown-linux-musl
-bin_names := hello1 hello2 elffile
+bin_names := hello1 hello2 elffile syscalltest
 bin_files := $(patsubst %, filesystem/target/$(bin_target)/debug/%, $(bin_names))
 
 .PHONY: filesystem

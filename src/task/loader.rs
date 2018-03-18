@@ -32,19 +32,24 @@ unsafe fn alloc_segment(size: usize, align: usize) -> *mut u8 {
 unsafe fn load_segments(fd: usize, entries: Vec<ProgramHeaderEntry>) -> Vec<SegmentDescriptor> {
     let mut segments: Vec<SegmentDescriptor> = Vec::new();
     segments.push(SegmentDescriptor::NULL); // Null Descriptor
-    for entry in entries[..2].iter() {
+    for (index, entry) in entries[..2].iter().enumerate() {
         if entry.entry_type.get_type() == EntryType::PtLoad {
             let ptr = alloc_segment((entry.mem_size + entry.vaddr) as usize, entry.align as usize);
 
             // Loading segment from disk to memory.
             let slice = slice::from_raw_parts_mut((entry.vaddr as usize + ptr as usize) as *mut u8, entry.file_size as usize);
-            print!("Loading segment starting at {:#8x}, size: {:#8x}.", slice.as_ptr() as u32, slice.len());
             seek(fd, entry.offset as usize);
             read(fd, slice);
-            println!(" Loaded.");
 
-            // Adding a new user space descriptor
-            segments.push(SegmentDescriptor::new(ptr as u32, entry.vaddr + entry.mem_size, 0b11111010, 0b0100));
+            if index == 0 {
+                println!("Loaded Code Segment.");
+                // Adding a new user space code descriptor
+                segments.push(SegmentDescriptor::new(ptr as u32, entry.vaddr + entry.mem_size, 0b11111010, 0b0100));    
+            } else {
+                println!("Loaded Data Segment.");
+                // Adding a new user space data descriptor
+                segments.push(SegmentDescriptor::new(ptr as u32, entry.vaddr + entry.mem_size, 0b11110010, 0b0100));
+            }
         }
     }
 

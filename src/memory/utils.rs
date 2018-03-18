@@ -1,7 +1,5 @@
-use super::segmentation::SegmentSelector;
-
 #[inline(always)]
-pub unsafe fn load_cs(segment: SegmentSelector) {
+pub unsafe fn load_cs(segment: u32) {
     asm!("
     mov ax, $0
     jmp ax:.flush_cs
@@ -10,7 +8,7 @@ pub unsafe fn load_cs(segment: SegmentSelector) {
 }
 
 #[inline(always)]
-pub unsafe fn load_ds(segment: SegmentSelector) {
+pub unsafe fn load_ds(segment: u32) {
     asm!("
     mov ax, $0
     mov ds, ax
@@ -18,7 +16,7 @@ pub unsafe fn load_ds(segment: SegmentSelector) {
 }
 
 #[inline(always)]
-pub unsafe fn load_ss(segment: SegmentSelector) {
+pub unsafe fn load_ss(segment: u32) {
  asm!("
     mov ax, $0
     mov ss, ax
