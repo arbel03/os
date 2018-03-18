@@ -62,11 +62,17 @@ impl IdtEntry {
         base_high: 0,
     };
 
-    pub fn new(isr: u32) -> Self {
+    pub fn new(isr: u32, protection_level: u8, is_trap: bool) -> Self {
         let base_low = (isr & 0xFFFF) as u16;
         let selector: u16 = 0x08; // My code segment
         let zero: u8 = 0;
-        let flags: u8 = Flags::Present as u8 | Flags::DPL3 as u8 | Flags::GateInterrupt32 as u8;
+        let pl = match protection_level {
+            0 => Flags::DPL0,
+            3 => Flags::DPL3,
+            _ => panic!("Invalid PL."),
+        };
+        let gate = if is_trap { Flags::GateTrap32 } else { Flags::GateInterrupt32 };
+        let flags: u8 = Flags::Present as u8 | pl as u8 | gate as u8;
         let base_high: u16 = ((isr >> 16) & 0xFFFF) as u16;
 
         Self {
@@ -161,8 +167,14 @@ impl Idt {
     pub unsafe fn load(&self) {
         use dtables::{ TableDescriptor, lidt };
         use core::slice;
+        use core::mem;
+
+        let idt_entry_size = mem::size_of::<IdtEntry>();
         let idt_slice = slice::from_raw_parts(self as *const _ as *const IdtEntry, 256);
-        let idtr = TableDescriptor::new(idt_slice);
+        let idtr = TableDescriptor {
+            limit: (idt_slice.len() * idt_entry_size) as u16 - 1,
+            ptr: idt_slice.as_ptr() as *const _ as u32,
+        };
         lidt(&idtr);
     }
 }

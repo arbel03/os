@@ -30,6 +30,8 @@ mod filesystem;
 mod syscall;
 mod task;
 
+use memory::heap::Heap;
+use bitmap_allocator::BitmapAllocator;
 pub use interrupts::syscall::syscall_handler_inner;
 
 #[derive(Debug, Copy, Clone)]
@@ -41,8 +43,6 @@ pub struct BootloaderInfo {
     kernel_end: u32,
 }
 
-use memory::heap::Heap;
-use bitmap_allocator::BitmapAllocator;
 #[global_allocator]
 static HEAP: Heap = Heap::new(BitmapAllocator::new(0x1000000, 1024*100, core::mem::size_of::<usize>()*4)); // 100 KB
 
@@ -59,7 +59,7 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     task::init(free_memory_areas);
 
     unsafe {
-        task::loader::load_elf("bin/hello2");
+        task::execv("bin/elffile");
     }
     
     loop {};

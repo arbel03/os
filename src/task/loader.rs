@@ -1,10 +1,10 @@
-use syscall::fs::{ open, read, seek };
-use super::elf::*;
-use core::slice;
-use core::str;
-use alloc::Vec;
 use super::PROCESS_ALLOCATOR;
+use super::elf::*;
+use syscall::fs::{ open, read, seek };
+use core::{ slice, str };
+use alloc::Vec;
 use alloc::allocator::{ Layout, Alloc };
+use memory::segmentation::SegmentDescriptor;
 
 unsafe fn read_header(file_descriptor: usize, header: &mut ElfHeader) {
     let read_buff = slice::from_raw_parts_mut(header as *mut ElfHeader as *mut u8, 52);
@@ -22,25 +22,37 @@ unsafe fn read_ph_entries(file_descriptor: usize, header: &ElfHeader) -> Vec<Pro
     return ph_entries;
 }
 
-pub unsafe fn load_segments(fd: usize, entries: Vec<ProgramHeaderEntry>) {
+unsafe fn alloc_segment(size: usize, align: usize) -> *mut u8 {
+    // Alloc space for the new process.
+    let layout = Layout::from_size_align(size, align).unwrap();
+    let ptr = PROCESS_ALLOCATOR.as_mut().unwrap().alloc(layout).unwrap();
+    ptr
+}
+
+unsafe fn load_segments(fd: usize, entries: Vec<ProgramHeaderEntry>) -> Vec<SegmentDescriptor> {
+    let mut segments: Vec<SegmentDescriptor> = Vec::new();
+    segments.push(SegmentDescriptor::NULL); // Null Descriptor
     for entry in entries[..2].iter() {
         if entry.entry_type.get_type() == EntryType::PtLoad {
-            // Alloc space for the new process.
-            let layout = Layout::from_size_align(entry.mem_size as usize, entry.align as usize).unwrap();
-            let ptr = PROCESS_ALLOCATOR.as_mut().unwrap().alloc(layout).unwrap();
+            let ptr = alloc_segment((entry.mem_size + entry.vaddr) as usize, entry.align as usize);
 
             // Loading segment from disk to memory.
             let slice = slice::from_raw_parts_mut((entry.vaddr as usize + ptr as usize) as *mut u8, entry.file_size as usize);
-            print!("Loading segment starting at {:?}, size: {:#x}.", slice.as_ptr(), slice.len());
+            print!("Loading segment starting at {:#8x}, size: {:#8x}.", slice.as_ptr() as u32, slice.len());
             seek(fd, entry.offset as usize);
             read(fd, slice);
             println!(" Loaded.");
+
+            // Adding a new user space descriptor
+            segments.push(SegmentDescriptor::new(ptr as u32, entry.vaddr + entry.mem_size, 0b11111010, 0b0100));
         }
     }
+
+    // First is null, second is code, third is data.
+    return segments;
 }
 
-pub unsafe fn load_elf(file_name: &str) {
-    // Test filesystem syscalls
+pub(in super) unsafe fn load_elf(file_name: &str) -> (ElfHeader, Vec<SegmentDescriptor>) {
     let mut elf_header = ElfHeader::default();
     let entries: Vec<ProgramHeaderEntry>;
     let fd: usize;
@@ -49,7 +61,18 @@ pub unsafe fn load_elf(file_name: &str) {
     if !elf_header.is_valid() {
         panic!("Not a valid ELF file.");
     }
+
     entries = read_ph_entries(fd, &elf_header);
-    load_segments(fd, entries);
+    // First is null, second is code, third is data
+    let mut segments = load_segments(fd, entries);
+
+    // Adding a stack segment for the process
+    let stack_size = 1024*50;
+    // Passing align=1 to disable aligning
+    let stack_top = alloc_segment(stack_size, 1) as usize;
+    let stack_base = stack_top + stack_size;
+    segments.push(SegmentDescriptor::new(stack_base as u32, stack_size as u32, 0b11110110, 0b0100));
+
+    return (elf_header, segments);
 }
 
