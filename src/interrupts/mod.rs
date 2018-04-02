@@ -26,11 +26,11 @@ pub fn init() {
 }
 
 extern "x86-interrupt" fn primary_ata_controller(_stack_frame: &idt::ExceptionStackFrame) {
-    // println!("Primary ATA controller interrupted.");
     drivers::send_eoi(true);
 }
 
 extern "x86-interrupt" fn keyboard_irq(_stack_frame: &idt::ExceptionStackFrame) {
+    // println!("{}", _stack_frame);
     if let Some(c) = drivers::keyboard::getc() {
         print!("{}", c);
     }

@@ -32,7 +32,7 @@ impl Gdt for SegmentDescriptorTable {
         // 00000000 00000000 00000000 01100111
         // 00000000 10000000 10001001 00000000
         let tss_size = ::core::mem::size_of::<TaskStateSegment>() as u32;
-        self.insert(SegmentType::TssDescriptor as usize, SegmentDescriptor::new(tss as *const _ as u32, tss_size, 0b11101001, 0b1000));
+        self.insert(SegmentType::TssDescriptor as usize, SegmentDescriptor::new(tss as *const _ as u32, tss_size, 0b10001001, 0b1000));
     }
 
     fn set_ldt(&mut self, ldt: &SegmentDescriptorTable) {
@@ -40,7 +40,7 @@ impl Gdt for SegmentDescriptorTable {
         // 00000000 00000000 00000000 00001111
         // 00000000 10000000 10000010 00000000 
         let table_descriptor = TableDescriptor::new(ldt);
-        self.insert(SegmentType::LdtDescriptor as usize, SegmentDescriptor::new(table_descriptor.ptr, table_descriptor.limit as u32 + 1, 0b10000010 , 0b1000));
+        self.insert(SegmentType::LdtDescriptor as usize, SegmentDescriptor::new(table_descriptor.ptr, table_descriptor.limit as u32 + 1, 0b11100010 , 0b1000));
     }
     fn set_descriptor(&mut self, segment_type: SegmentType, descriptor: SegmentDescriptor) {
         self.insert(segment_type as usize, descriptor);

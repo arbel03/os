@@ -22,3 +22,27 @@ pub unsafe fn load_ss(segment: u32) {
     mov ss, ax
     " :: "m"(segment) : "ax" : "intel","volatile");
 }
+
+#[inline(always)]
+pub unsafe fn load_es(segment: u32) {
+ asm!("
+    mov ax, $0
+    mov es, ax
+    " :: "m"(segment) : "ax" : "intel","volatile");
+}
+
+#[inline(always)]
+pub unsafe fn load_gs(segment: u32) {
+ asm!("
+    mov ax, $0
+    mov gs, ax
+    " :: "m"(segment) : "ax" : "intel","volatile");
+}
+
+#[inline(always)]
+pub unsafe fn load_fs(segment: u32) {
+ asm!("
+    mov ax, $0
+    mov fs, ax
+    " :: "m"(segment) : "ax" : "intel","volatile");
+}

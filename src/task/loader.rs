@@ -74,9 +74,8 @@ pub(in super) unsafe fn load_elf(file_name: &str) -> (ElfHeader, Vec<SegmentDesc
     // Adding a stack segment for the process
     let stack_size = 1024*50;
     // Passing align=1 to disable aligning
-    let stack_top = alloc_segment(stack_size, 1) as usize;
-    let stack_base = stack_top + stack_size;
-    segments.push(SegmentDescriptor::new(stack_base as u32, stack_size as u32, 0b11110110, 0b0100));
+    let stack_base = alloc_segment(stack_size, 1) as u32;
+    segments.push(SegmentDescriptor::new(stack_base, stack_size as u32, 0b11110010, 0b0100));
 
     return (elf_header, segments);
 }

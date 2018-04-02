@@ -1,11 +1,10 @@
 pub mod heap;
 pub mod gdt;
 pub mod segmentation;
+pub mod utils;
 mod memory_map;
-mod utils;
 
 pub use self::memory_map::*;
-pub use self::utils::*;
 use BootloaderInfo;
 use dtables;
 
@@ -21,18 +20,23 @@ pub unsafe fn setup_descriptors(bootloader_info: &BootloaderInfo, free_memory_ar
     // Kernel Data Segment
     GDT.set_descriptor(SegmentType::KernelData, SegmentDescriptor::new(0, bootloader_info.kernel_end, 0x92, 0b0100));
 
+    // User Code
+    GDT.set_descriptor(SegmentType::UserCode, SegmentDescriptor::new(bootloader_info.kernel_end, 0x400000, 0b11111010, 0b0100));
+    // User Data
+    GDT.set_descriptor(SegmentType::UserData, SegmentDescriptor::new(bootloader_info.kernel_end, 0x400000, 0b11110010, 0b0100));
+    
     // Adding TSS&LDT descriptor
     use task::{ TSS, LDT };
-    GDT.set_tss(&TSS);
     GDT.set_ldt(&LDT);
+    GDT.set_tss(&TSS);
 
     // Set and load the table
     GDT.load();
 
-    load_ds(GDT.get_selector(SegmentType::KernelData, 0));
+    utils::load_ds(GDT.get_selector(SegmentType::KernelData, 0));
     // TODO: setup stack in a whole different segment to detect stack overflows
-    load_ss(GDT.get_selector(SegmentType::KernelData, 0));
-    load_cs(GDT.get_selector(SegmentType::KernelCode, 0));
+    utils::load_ss(GDT.get_selector(SegmentType::KernelData, 0));
+    utils::load_cs(GDT.get_selector(SegmentType::KernelCode, 0));
 }
 
 fn get_free_memory_areas(memory_map: MemoryMapIterator, bootloader_info: &BootloaderInfo) -> MemoryAreas {
