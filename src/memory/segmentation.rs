@@ -1,15 +1,5 @@
 use dtables::Encodable;
 
-pub enum SegmentType {
-    NullDescriptor = 0,
-    KernelCode = 1,
-    KernelData = 2,
-    TssDescriptor = 3,
-    LdtDescriptor = 4,
-    UserCode = 5,
-    UserData = 6,
-}
-
 // Segment Selector
 
 pub enum TableType { 

@@ -98,10 +98,15 @@ impl Fat32 {
             if let Some(found_dir) = current_dirs.iter().find(|dir| dir.get_name() == component) {
                 dir = found_dir;
             } else {
-                dir = current_dirs.iter().find(|dir| { 
+                let result = current_dirs.iter().find(|dir| { 
                     use alloc::string::ToString;
                     return dir.get_name() == component.to_string().to_uppercase();
-                }).unwrap();
+                });
+                if let Some(found_dir) = result {
+                    dir = found_dir;
+                } else {
+                    return None;
+                }
             }
             if dir.get_fat_dir().is_folder() {
                 return self.find_file(drive, dir.get_fat_dir().get_cluster() as usize, path);
@@ -146,7 +151,6 @@ impl Filesystem for Fat32 {
         let mut current_cluster = cluster_chain.next();
         let mut temp_buff = vec![0u8; cluster_size];
         while !current_cluster.is_none() && write_current+1 < buffer.len() {
-            // println!("Reading cluster {}", current_cluster.unwrap().0);
             // Reading cluster into buffer
             let sector_to_read = self.first_sector_of_cluster(current_cluster.unwrap().0);
             unsafe { drive.read(sector_to_read, &mut temp_buff).unwrap(); }
@@ -154,7 +158,6 @@ impl Filesystem for Fat32 {
             let read_index = read_current % cluster_size;
             let read_len = min(cluster_size-read_index, buffer.len()-write_current);
             
-            // println!("Writing to {:#x}", buffer.as_ptr() as usize + write_current);
             &mut buffer[write_current..write_current+read_len].clone_from_slice(&temp_buff[read_index..read_index+read_len]);
 
             write_current += read_len;

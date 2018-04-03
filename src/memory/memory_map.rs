@@ -81,6 +81,17 @@ impl MemoryAreas {
             Err(pos) => self.0.insert(pos, memory_area),
         }  
     }
+
+    pub fn get_last_address(&self) -> u32 {
+        let mut max = 0;
+        for area in self.0.iter() {
+            let curr = area.base+area.size;
+            if curr > max {
+                max = curr;
+            }
+        }
+        return max as u32;
+    }
 }
 
 pub(in super) struct MemoryMapIterator {

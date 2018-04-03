@@ -25,7 +25,8 @@ pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize
         FILESYSTEM_CLASS => { 
             let fd = b;
             match a & SYSCALL_METHOD {
-                CALL_OPEN => open(to_str(b, c)),
+                // TODO- replace 0x15b000 with the base of the current process data segment.
+                CALL_OPEN => open(to_str(b+0x15b000, c)),
                 _ => 0xFFFFFFFF,
             }
         },

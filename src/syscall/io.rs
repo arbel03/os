@@ -12,6 +12,8 @@
 
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+
+// TODO - move all this code to custom std, inside /filesystem
 #![allow(dead_code)]
 
 pub unsafe fn syscall0(mut a: usize) -> usize {

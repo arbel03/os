@@ -11,17 +11,25 @@ syscall_handler:
     push esi
     push edi
 
-    push esp
+    mov eax, esp
 
-    mov ax, 0x10
-    mov ds, ax
-    mov fs, ax
-    mov es, ax
-    mov gs, ax
+    ; Data segments
+    push gs
+    push fs
+    push es
+    push ds
+
+    push eax
 
     call syscall_handler_inner
     
-    pop esp
+    add esp, 4
+
+    ; Data segments
+    pop ds
+    pop es
+    pop fs
+    pop gs
 
     pop edi
     pop esi

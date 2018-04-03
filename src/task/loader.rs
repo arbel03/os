@@ -31,7 +31,7 @@ unsafe fn alloc_segment(size: usize, align: usize) -> *mut u8 {
 
 unsafe fn load_segments(fd: usize, entries: Vec<ProgramHeaderEntry>) -> Vec<SegmentDescriptor> {
     let mut segments: Vec<SegmentDescriptor> = Vec::new();
-    segments.push(SegmentDescriptor::NULL); // Null Descriptor
+
     for (index, entry) in entries[..2].iter().enumerate() {
         if entry.entry_type.get_type() == EntryType::PtLoad {
             let ptr = alloc_segment((entry.mem_size + entry.vaddr) as usize, entry.align as usize);
@@ -42,11 +42,9 @@ unsafe fn load_segments(fd: usize, entries: Vec<ProgramHeaderEntry>) -> Vec<Segm
             read(fd, slice);
 
             if index == 0 {
-                println!("Loaded Code Segment.");
                 // Adding a new user space code descriptor
                 segments.push(SegmentDescriptor::new(ptr as u32, entry.vaddr + entry.mem_size, 0b11111010, 0b0100));    
             } else {
-                println!("Loaded Data Segment.");
                 // Adding a new user space data descriptor
                 segments.push(SegmentDescriptor::new(ptr as u32, entry.vaddr + entry.mem_size, 0b11110010, 0b0100));
             }

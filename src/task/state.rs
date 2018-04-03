@@ -1,6 +1,7 @@
-#[repr(packed, C)]
+#[repr(packed)]
+#[derive(Debug)]
 pub struct TaskStateSegment {
-    pub prev_tss: u32, // Next Tss entry
+    pub link: u32, // Next Tss entry
     pub esp0: u32, // Stacks
     pub ss0: u32,
     pub esp1: u32,
@@ -32,7 +33,7 @@ pub struct TaskStateSegment {
 impl TaskStateSegment {
     pub const fn empty() -> Self {
         TaskStateSegment {
-            prev_tss: 0, 
+            link: 0, 
             esp0: 0, 
             ss0: 0,
             esp1: 0,

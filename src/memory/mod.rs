@@ -11,32 +11,34 @@ use dtables;
 pub static mut GDT: gdt::SegmentDescriptorTable = dtables::DescriptorTable::new();
 
 pub unsafe fn setup_descriptors(bootloader_info: &BootloaderInfo, free_memory_areas: &MemoryAreas) {
-    use self::gdt::Gdt;
-    use self::segmentation::{ SegmentType, SegmentDescriptor };
+    use self::gdt::{ DescriptorType, Gdt };
+    use self::segmentation::SegmentDescriptor;
     GDT.init();
     
     // Kernel Code Segment
-    GDT.set_descriptor(SegmentType::KernelCode, SegmentDescriptor::new(0, bootloader_info.kernel_end, 0x9A, 0b0100));
+    GDT.set_descriptor(DescriptorType::KernelCode, SegmentDescriptor::new(0, free_memory_areas.get_last_address(), 0x9A, 0b0100));
     // Kernel Data Segment
-    GDT.set_descriptor(SegmentType::KernelData, SegmentDescriptor::new(0, bootloader_info.kernel_end, 0x92, 0b0100));
+    GDT.set_descriptor(DescriptorType::KernelData, SegmentDescriptor::new(0, free_memory_areas.get_last_address(), 0x92, 0b0100));
+
+    let start = bootloader_info.kernel_end;
+    let size = free_memory_areas.get_last_address() - start;
 
     // User Code
-    GDT.set_descriptor(SegmentType::UserCode, SegmentDescriptor::new(bootloader_info.kernel_end, 0x400000, 0b11111010, 0b0100));
+    GDT.set_descriptor(DescriptorType::UserCode, SegmentDescriptor::new(start, size, 0b11111010, 0b0100));
     // User Data
-    GDT.set_descriptor(SegmentType::UserData, SegmentDescriptor::new(bootloader_info.kernel_end, 0x400000, 0b11110010, 0b0100));
-    
+    GDT.set_descriptor(DescriptorType::UserData, SegmentDescriptor::new(start, size, 0b11110010, 0b0100));
+
     // Adding TSS&LDT descriptor
-    use task::{ TSS, LDT };
-    GDT.set_ldt(&LDT);
+    use task::{ TSS };
     GDT.set_tss(&TSS);
 
     // Set and load the table
     GDT.load();
 
-    utils::load_ds(GDT.get_selector(SegmentType::KernelData, 0));
+    utils::load_ds(GDT.get_selector(DescriptorType::KernelData, 0));
     // TODO: setup stack in a whole different segment to detect stack overflows
-    utils::load_ss(GDT.get_selector(SegmentType::KernelData, 0));
-    utils::load_cs(GDT.get_selector(SegmentType::KernelCode, 0));
+    utils::load_ss(GDT.get_selector(DescriptorType::KernelData, 0));
+    utils::load_cs(GDT.get_selector(DescriptorType::KernelCode, 0));
 }
 
 fn get_free_memory_areas(memory_map: MemoryMapIterator, bootloader_info: &BootloaderInfo) -> MemoryAreas {
