@@ -1,5 +1,5 @@
 use super::segmentation::*;
-use task::state::TaskStateSegment;
+use task::process::TaskStateSegment;
 use dtables::*;
 
 pub enum DescriptorType {
@@ -20,7 +20,7 @@ pub trait Gdt {
     fn init(&mut self);
     fn set_tss(&mut self, tss: &TaskStateSegment);
     fn set_ldt(&mut self, ldt: &SegmentDescriptorTable);
-    fn get_selector(&self, segment_type: DescriptorType, privilege_level: usize) -> u32;
+    fn get_selector(&self, segment_type: DescriptorType, privilege_level: usize) -> u16;
     fn set_descriptor(&mut self, segment_type: DescriptorType, descriptor: SegmentDescriptor);
     unsafe fn load(&self);
 }
@@ -34,7 +34,7 @@ pub trait Gdt {
 // Data Segment- PL3
 impl Gdt for SegmentDescriptorTable {
     fn init(&mut self) {
-        self.init_with_length(7);
+        self.init_with_length(9);
     }
 
     fn set_tss(&mut self, tss: &TaskStateSegment) {
@@ -44,7 +44,10 @@ impl Gdt for SegmentDescriptorTable {
         let base = tss as *const _ as u32;
         let size = ::core::mem::size_of::<TaskStateSegment>() as u32;
         let limit = base + size;
-        self.insert(DescriptorType::TssDescriptor as usize, SegmentDescriptor::new(base, limit, 0b10001001, 0b0100));
+
+        //let index: DescriptorType = if is_main { MainTssDescriptor } else { SecondaryTssDescriptor };
+        let index = DescriptorType::TssDescriptor;
+        self.insert(index as usize, SegmentDescriptor::new(base, limit, 0b10001001, 0b0100));
     }
 
     fn set_ldt(&mut self, ldt: &SegmentDescriptorTable) {
@@ -55,13 +58,16 @@ impl Gdt for SegmentDescriptorTable {
         let base = table_descriptor.ptr;
         let size = table_descriptor.limit as u32 + 1;
         let limit = base + size;
-        self.insert(DescriptorType::LdtDescriptor as usize, SegmentDescriptor::new(base, limit, 0b11100010 , 0b0100));
+
+        //let index: DescriptorType = if is_main { ::MainLdtDescriptor } else { ::SecondaryLdtDescriptor };
+        let index = DescriptorType::LdtDescriptor;
+        self.insert(index as usize, SegmentDescriptor::new(base, limit, 0b11100010 , 0b0100));
     }
     fn set_descriptor(&mut self, segment_type: DescriptorType, descriptor: SegmentDescriptor) {
         self.insert(segment_type as usize, descriptor);
     }
 
-    fn get_selector(&self, segment_type: DescriptorType, privilege_level: usize) -> u32 {
+    fn get_selector(&self, segment_type: DescriptorType, privilege_level: usize) -> u16 {
         SegmentSelector::new(segment_type as usize, TableType::GDT, privilege_level)
     }
 

@@ -43,10 +43,10 @@ unsafe fn load_segments(fd: usize, entries: Vec<ProgramHeaderEntry>) -> Vec<Segm
 
             if index == 0 {
                 // Adding a new user space code descriptor
-                segments.push(SegmentDescriptor::new(ptr as u32, entry.vaddr + entry.mem_size, 0b11111010, 0b0100));    
+                segments.push(SegmentDescriptor::new(ptr as u32, ptr as u32 + entry.vaddr + entry.mem_size, 0b11111010, 0b0100));    
             } else {
                 // Adding a new user space data descriptor
-                segments.push(SegmentDescriptor::new(ptr as u32, entry.vaddr + entry.mem_size, 0b11110010, 0b0100));
+                segments.push(SegmentDescriptor::new(ptr as u32, ptr as u32 + entry.vaddr + entry.mem_size, 0b11110010, 0b0100));
             }
         }
     }
@@ -73,7 +73,7 @@ pub(in super) unsafe fn load_elf(file_name: &str) -> (ElfHeader, Vec<SegmentDesc
     let stack_size = 1024*50;
     // Passing align=1 to disable aligning
     let stack_base = alloc_segment(stack_size, 1) as u32;
-    segments.push(SegmentDescriptor::new(stack_base, stack_size as u32, 0b11110010, 0b0100));
+    segments.push(SegmentDescriptor::new(stack_base, stack_base + stack_size as u32, 0b11110010, 0b0100));
 
     return (elf_header, segments);
 }

@@ -5,6 +5,7 @@ pub use self::io::*;
 use self::fs::*;
 use core::slice;
 use core::str;
+use super::task::CURRENT_PROCESS;
 
 pub fn to_str<'a>(ptr: usize, size: usize) -> &'a str {
     unsafe {
@@ -26,7 +27,10 @@ pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize
             let fd = b;
             match a & SYSCALL_METHOD {
                 // TODO- replace 0x15b000 with the base of the current process data segment.
-                CALL_OPEN => open(to_str(b+0x15b000, c)),
+                CALL_OPEN => { 
+                    let string_ptr = CURRENT_PROCESS.as_ref().unwrap().translate_data_address(b as u32);
+                    open(to_str(string_ptr as usize, c)) 
+                },
                 _ => 0xFFFFFFFF,
             }
         },

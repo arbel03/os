@@ -1,5 +1,5 @@
 #[inline(always)]
-pub unsafe fn load_cs(segment: u32) {
+pub unsafe fn load_cs(segment: u16) {
     asm!("
     mov ax, $0
     jmp ax:.flush_cs
@@ -8,7 +8,7 @@ pub unsafe fn load_cs(segment: u32) {
 }
 
 #[inline(always)]
-pub unsafe fn load_ds(segment: u32) {
+pub unsafe fn load_ds(segment: u16) {
     asm!("
     mov ax, $0
     mov ds, ax
@@ -16,7 +16,7 @@ pub unsafe fn load_ds(segment: u32) {
 }
 
 #[inline(always)]
-pub unsafe fn load_ss(segment: u32) {
+pub unsafe fn load_ss(segment: u16) {
  asm!("
     mov ax, $0
     mov ss, ax
@@ -24,7 +24,7 @@ pub unsafe fn load_ss(segment: u32) {
 }
 
 #[inline(always)]
-pub unsafe fn load_es(segment: u32) {
+pub unsafe fn load_es(segment: u16) {
  asm!("
     mov ax, $0
     mov es, ax
@@ -32,7 +32,7 @@ pub unsafe fn load_es(segment: u32) {
 }
 
 #[inline(always)]
-pub unsafe fn load_gs(segment: u32) {
+pub unsafe fn load_gs(segment: u16) {
  asm!("
     mov ax, $0
     mov gs, ax
@@ -40,7 +40,7 @@ pub unsafe fn load_gs(segment: u32) {
 }
 
 #[inline(always)]
-pub unsafe fn load_fs(segment: u32) {
+pub unsafe fn load_fs(segment: u16) {
  asm!("
     mov ax, $0
     mov fs, ax

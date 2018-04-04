@@ -28,10 +28,6 @@ pub unsafe fn setup_descriptors(bootloader_info: &BootloaderInfo, free_memory_ar
     // User Data
     GDT.set_descriptor(DescriptorType::UserData, SegmentDescriptor::new(start, size, 0b11110010, 0b0100));
 
-    // Adding TSS&LDT descriptor
-    use task::{ TSS };
-    GDT.set_tss(&TSS);
-
     // Set and load the table
     GDT.load();
 

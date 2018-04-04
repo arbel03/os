@@ -62,12 +62,12 @@ impl IdtEntry {
         base_high: 0,
     };
 
-    pub fn new_task_gate(tss_selector: u32) -> Self {
+    pub fn new_task_gate(tss_selector: u16) -> Self {
         let pl = 0;
 
         IdtEntry {
             base_low: 0,
-            selector: tss_selector as u16,
+            selector: tss_selector,
             zero: 0,
             flags: Flags::Present as u8 | pl as u8 | Flags::GateTask32 as u8,
             base_high: 0,
