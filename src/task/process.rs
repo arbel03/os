@@ -111,6 +111,10 @@ impl Process {
         return self.address_space[1].base + virtual_address;
     }
 
+    pub fn translate_stack_address(&self, virtual_address: u32) -> u32 {
+        return self.address_space[2].base + virtual_address;
+    }
+
     pub fn setup_process(&mut self, ss0: u32, esp0: u32, entry_point: u32, esp: u32) {
         self.tss.ss0 = ss0;
         self.tss.esp0 = esp0;

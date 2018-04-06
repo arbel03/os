@@ -64,10 +64,6 @@ impl <'a> ClusterChain<'a> {
     }
 
     fn read_entry(&self, current: Cluster) -> FatEntry {
-        // if current.0 >= self.fat.get_total_clusters() {
-        //     return FatEntry::End;
-        // }
-
         let sector_size = self.fat.ebpb.bpb.bytes_per_sector as usize;
         // Buffer to hold sector data
         let mut fat_table = vec![0u8; sector_size];

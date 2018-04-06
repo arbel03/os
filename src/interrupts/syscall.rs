@@ -37,7 +37,6 @@ pub unsafe extern fn syscall_handler_inner(regs: &SyscallStack) {
     load_fs(GDT.get_selector(DescriptorType::KernelData, 0));
     load_gs(GDT.get_selector(DescriptorType::KernelData, 0));
 
-    println!("Received syscall, registers: {:?}", regs);
     let result = syscall::syscall(regs.eax, regs.ebx, regs.ecx, regs.edx, regs.esi, regs.edi);
     asm!("mov eax, $0" :: "m"(result) :: "intel");
 }
