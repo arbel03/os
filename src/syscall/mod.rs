@@ -1,7 +1,5 @@
 pub mod fs;
-mod io;
 
-pub use self::io::*;
 use self::fs::*;
 use core::slice;
 use core::str;
@@ -14,27 +12,17 @@ pub fn to_str<'a>(ptr: usize, size: usize) -> &'a str {
     }
 }
 
-const SYSCALL_CLASS: usize = 0x0F;
-const SYSCALL_METHOD: usize = 0xF0;
-
-const FILESYSTEM_CLASS: usize = 0x01;
-const CALL_OPEN: usize = 0x10;
+const SYS_FOPEN: usize = 0x1;
+const UNDEFINED_SYSCALL: usize = 0xff;
 
 #[allow(unused_variables)]
 pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize) -> usize {
-    let x = match a & SYSCALL_CLASS {
-        FILESYSTEM_CLASS => { 
-            let fd = b;
-            match a & SYSCALL_METHOD {
-                // TODO- replace 0x15b000 with the base of the current process data segment.
-                CALL_OPEN => { 
-                    let string_ptr = CURRENT_PROCESS.as_ref().unwrap().translate_data_address(b as u32);
-                    open(to_str(string_ptr as usize, c)) 
-                },
-                _ => 0xFFFFFFFF,
-            }
+    let current_process = CURRENT_PROCESS.as_ref().unwrap();
+    match a {
+        SYS_FOPEN => {         
+            let string_ptr = current_process.translate_data_address(b as u32);
+            open(to_str(string_ptr as usize, c)) 
         },
-        _ => 0xFFFFFFFF,
-    };
-    return x;
+        _ => UNDEFINED_SYSCALL
+    }
 }

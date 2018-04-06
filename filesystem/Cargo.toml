@@ -4,14 +4,8 @@ version = "0.1.0"
 authors = ["Arbel Israeli <arbel03@gmail.com>"]
 
 [dependencies]
-
-[profile.release]
-panic = "abort"
+ostd = { path="ostd" }
 
 [[bin]]
-name = "hello1"
-path = "hello1.rs"
-
-[[bin]]
-name = "hello2"
-path = "hello2.rs"
+name = "shell"
+path = "shell.rs"

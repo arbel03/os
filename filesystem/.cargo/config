@@ -2,5 +2,11 @@
 linker = "i686-elf-gcc"
 rustflags = [
     "-C", "link-arg=-Wl,-Ttext=0x0",
-    "-C", "link-arg=-Wl,--gc-sections",
+    "-Z", "linker-flavor=gcc",
+]
+
+[target.i686-bin]
+linker = "i686-elf-ld"
+rustflags = [
+    "-C", "link-arg=-Ttext=0x0",
 ]

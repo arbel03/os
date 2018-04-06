@@ -93,12 +93,12 @@ macro_rules! define_interrupt_with_error_code {
                 add eax, 9*4
 
                 mov ecx, [eax]
-                inc eax
+                add eax, 4
 
                 push ecx
                 push eax                
                 call ebx
-                add esp, 4
+                add esp, 8
                 " :: "r"($b as extern "C" fn(&idt::ExceptionStackFrame, u32) as usize) :: "intel", "volatile");
                 restore_registers!();
                 asm!("add esp, 4

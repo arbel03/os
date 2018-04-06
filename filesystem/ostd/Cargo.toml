@@ -1,0 +1,4 @@
+[package]
+name = "ostd"
+version = "0.1.0"
+authors = ["Arbel Israeli <arbel03@gmail.com>"]

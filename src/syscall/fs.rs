@@ -1,11 +1,5 @@
 use filesystem::FILESYSTEM;
 
-#[allow(dead_code)]
-#[repr(usize)]
-pub enum FilesystemErr {
-    NoFile = 0x1,
-}
-
 // TODO: Add flags, `O_RDONLY` for example
 pub unsafe fn open(file_name: &str) -> usize {
     if let Some(opened_descriptor) = FILESYSTEM.as_mut().unwrap().open_file(file_name) {

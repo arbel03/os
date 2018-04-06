@@ -59,7 +59,7 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     task::init(free_memory_areas);
 
     unsafe {
-        task::execv("bin/elffile");
+        task::execv("bin/shell");
     }
     
     loop {};
