@@ -115,20 +115,20 @@ impl Process {
         return self.address_space[2].base + virtual_address;
     }
 
-    pub fn setup_process(&mut self, ss0: u32, esp0: u32, entry_point: u32, esp: u32) {
-        self.tss.ss0 = ss0;
+    pub fn setup_process(&mut self, ss0: u16, esp0: u32, entry_point: u32, esp: u32, code_selector: u16, data_selector: u16, stack_selector: u16) {
+        self.tss.ss0 = ss0 as u32;
         self.tss.esp0 = esp0;
         self.tss.eip = entry_point;
         self.tss.esp = esp;
 
         use memory::segmentation::TableType;
-        self.tss.ss = SegmentSelector::new(2, TableType::LDT, 3) as u32;
+        self.tss.ss = stack_selector as u32;
         // Data segments
-        self.tss.ds = SegmentSelector::new(1, TableType::LDT, 3) as u32;
-        self.tss.gs = SegmentSelector::new(1, TableType::LDT, 3) as u32;
-        self.tss.fs = SegmentSelector::new(1, TableType::LDT, 3) as u32;
-        self.tss.es = SegmentSelector::new(1, TableType::LDT, 3) as u32;
+        self.tss.ds = data_selector as u32;
+        self.tss.gs = data_selector as u32;
+        self.tss.fs = data_selector as u32;
+        self.tss.es = data_selector as u32;
         
-        self.tss.cs = SegmentSelector::new(0, TableType::LDT, 3) as u32;
+        self.tss.cs = code_selector as u32;
     }
 }

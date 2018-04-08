@@ -10,7 +10,7 @@ xargo-bin:
 	@cd filesystem; xargo build --target=$(bin_target) --bins
 
 clean-filesystem:
-	@cargo clean
+	@xargo clean
 	@rm -r filesystem/target/
 
 copy-bins:
