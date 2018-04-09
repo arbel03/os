@@ -63,13 +63,12 @@ pub unsafe fn execv(file_name: &str) {
         (code_selector, data_selector, stack_selector)
     };
 
+    println!("\nCODE: {:#x}\nDATA: {:#x}\nSTACK: {:#x}\n", code_selector, data_selector, stack_selector);
+
     CURRENT_PROCESS = Some(boxed_process);
 
-    load_ds(data_selector);
-    load_es(data_selector);
-    load_fs(data_selector);
-    load_gs(data_selector);
-    
+    // load_ds(data_selector);
+
     extern {
         fn context_switch(stack_selector: u32, stack_size: u32, code_selector: u32);
     }

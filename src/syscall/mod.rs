@@ -13,6 +13,7 @@ pub fn to_str<'a>(ptr: usize, size: usize) -> &'a str {
 }
 
 const SYS_FOPEN: usize = 0x1;
+const SYS_PRINT: usize = 0x2;
 const UNDEFINED_SYSCALL: usize = 0xff;
 
 #[allow(unused_variables)]
@@ -20,9 +21,15 @@ pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize
     let current_process = CURRENT_PROCESS.as_ref().unwrap();
     match a {
         SYS_FOPEN => {         
-            let string_ptr = current_process.translate_data_address(b as u32);
-            open(to_str(string_ptr as usize, c)) 
+            let ptr = current_process.translate_data_address(b as u32);
+            open(to_str(ptr as usize, c)) 
         },
+        SYS_PRINT => {
+            let ptr = current_process.translate_data_address(b as u32);
+            let string = to_str(ptr as usize, c);
+            print!("{}", string);
+            0
+        }
         _ => UNDEFINED_SYSCALL
     }
 }

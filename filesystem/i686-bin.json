@@ -7,6 +7,8 @@
 	"os": "none",
 	"arch": "x86",
 	"linker-flavor": "ld",
+	"eliminate-frame-pointer": false,		
+	"disable-redzone": true,
   	"features": "-sse,-mmx,+soft-float",
 	"panic-strategy": "abort",
 	"executables": true

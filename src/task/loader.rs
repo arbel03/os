@@ -34,7 +34,6 @@ unsafe fn load_segments(fd: usize, entries: Vec<ProgramHeaderEntry>) -> Vec<Segm
     segments.push(SegmentDescriptor::NULL);
 
     for (index, entry) in entries.iter().enumerate() {
-        println!("{:?}", entry);
         if entry.entry_type.get_type() == EntryType::PtLoad {
             let ptr = alloc_segment((entry.mem_size + entry.vaddr) as usize, entry.align as usize);
 

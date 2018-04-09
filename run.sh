@@ -82,7 +82,7 @@ run() {
         echo "Kernel attached."
         echo "Running operating system."
         # Running
-        qemu-system-i386 -drive file=$OS_FILE,format=raw #-d int
+        qemu-system-i386 -drive file=$OS_FILE,format=raw -d int
     fi
 }
 

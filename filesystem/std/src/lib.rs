@@ -3,10 +3,9 @@
 #![feature(start)]
 #![no_std]
 
-mod io;
-
-mod fs;
-pub use self::fs::*;
+mod syscall;
+pub mod fs;
+pub mod io;
 
 #[lang = "eh_personality"] extern fn eh_personality() { }
 

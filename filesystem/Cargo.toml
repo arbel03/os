@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Arbel Israeli <arbel03@gmail.com>"]
 
 [dependencies]
-ostd = { path="ostd" }
+std = { path="std" }
 
 [[bin]]
 name = "shell"
