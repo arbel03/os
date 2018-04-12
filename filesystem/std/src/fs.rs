@@ -5,3 +5,11 @@ pub fn open(file_path: &str) -> usize {
         syscall2(0x1, file_path.as_ptr() as usize, file_path.len())
     }
 }
+
+pub fn read(fd: usize, buffer: &mut [u8]) -> usize {
+    use syscall::syscall3;
+    // SYSCALL(SYS_READ, fd, ptr, size)
+    unsafe {
+        syscall3(0x3, fd, buffer.as_ptr() as usize, buffer.len())
+    }
+}

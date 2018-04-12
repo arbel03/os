@@ -2,3 +2,7 @@
 name = "std"
 version = "0.1.0"
 authors = ["Arbel Israeli <arbel03@gmail.com>"]
+
+[dependencies]
+bitmap_allocator = { path = "../../bitmap_allocator" }
+rlibc = "1.0"

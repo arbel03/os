@@ -68,16 +68,8 @@ impl TaskStateSegment {
     }
 }
 
-enum ProcessState {
-    New,
-    Ready,
-    Running,
-    Blocked,
-}
-
 // TODO: Add TSS
 pub struct Process {
-    process_state: ProcessState,
     address_space: Vec<SegmentDescriptor>,
     ldt: SegmentDescriptorTable,
     tss: TaskStateSegment,
@@ -86,7 +78,6 @@ pub struct Process {
 impl Process {
     pub fn new() -> Self {
         Process {
-            process_state: ProcessState::New,
             ldt: SegmentDescriptorTable::new(),
             address_space: Vec::new(),
             tss: TaskStateSegment::empty(),

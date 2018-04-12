@@ -69,7 +69,7 @@ impl <'a, T: Filesystem>  ManagedFilesystem<'a, T> {
     }
 
     // TODO: Add error handling
-    pub fn read_file(&mut self, descriptor: usize, buffer: &mut [u8]) {
+    pub fn read_file(&mut self, descriptor: usize, buffer: &mut [u8]) -> usize {
         if let Some(descriptor) = self.descriptors.iter_mut().find(|x| x.get_id() == descriptor) {
             let file_pointer = descriptor.get_pointer_mut();
             if let Some(result) = self.filesystem.read_file(self.drive, file_pointer, buffer) {
@@ -80,6 +80,7 @@ impl <'a, T: Filesystem>  ManagedFilesystem<'a, T> {
         } else {
             println!("Descriptor {} is not open.", descriptor);
         }
+        0
     }
 
     // This is not a syscall

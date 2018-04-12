@@ -124,8 +124,18 @@ pub fn init() {
         syscall::init();
 
         IDT.load();
-        // Enable hardware interrupts
+    }
+}
+
+pub fn enable() {
+    unsafe {
         asm!("sti");
+    }
+}
+
+pub fn disable() {
+    unsafe {
+        asm!("cli");
     }
 }
 

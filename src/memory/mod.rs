@@ -73,6 +73,8 @@ pub fn init(bootloader_info: &BootloaderInfo) -> MemoryAreas {
     let heap_size = min(first_free_memory_area.size, 1024*1000) as usize;
     (*HEAP).lock().set_bitmap_start(heap_start);
     (*HEAP).lock().set_size(heap_size);
+    // FIXME: Crashing when initializing heap here.
+    // (*HEAP).lock().init();
     println!("Setup Heap at {:#08x}, size: {:#08x}", heap_start, heap_size);
 
     let free_memory_areas = get_free_memory_areas(memory_iter, bootloader_info);

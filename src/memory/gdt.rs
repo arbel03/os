@@ -3,7 +3,6 @@ use task::process::TaskStateSegment;
 use dtables::*;
 
 pub enum DescriptorType {
-    NullDescriptor = 0,
     KernelCode = 1,
     KernelData = 2,
     TssDescriptor = 3,

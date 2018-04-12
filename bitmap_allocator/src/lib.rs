@@ -120,6 +120,16 @@ unsafe impl Alloc for BitmapAllocator {
     }
 }
 
+unsafe impl <'a> Alloc for &'a BitmapAllocator {
+    unsafe fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {
+        self.alloc(layout)
+    }
+
+    unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
+        self.dealloc(ptr, layout)
+    }
+}
+
 /// Align downwards. Returns the greatest x with alignment `align`
 /// so that x <= addr. The alignment must be a power of 2.
 pub fn align_down(addr: usize, align: usize) -> usize {

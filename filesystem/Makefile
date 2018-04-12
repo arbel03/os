@@ -1,5 +1,5 @@
 bin_target := i686-bin
-bin_names := shell
+bin_names := shell cat
 bin_files := $(patsubst %, filesystem/target/$(bin_target)/debug/%, $(bin_names))
 
 .PHONY: filesystem
@@ -7,7 +7,7 @@ bin_files := $(patsubst %, filesystem/target/$(bin_target)/debug/%, $(bin_names)
 filesystem: xargo-bin copy-bins
 
 xargo-bin:
-	@cd filesystem; xargo build --target=$(bin_target) --bins
+	@cd filesystem; export RUST_TARGET_PATH=$(shell pwd)/filesystem; xargo build --target=$(bin_target) --bins
 
 clean-filesystem:
 	@xargo clean

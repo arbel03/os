@@ -44,10 +44,13 @@ pub struct BootloaderInfo {
 }
 
 #[global_allocator]
-static HEAP: Heap = Heap::new(BitmapAllocator::new(0x1000000, 1024*100, core::mem::size_of::<usize>()*4)); // 100 KB
+static HEAP: Heap = Heap::new(BitmapAllocator::new(0x0, 0x9fc00, core::mem::size_of::<usize>()*4));
 
 #[no_mangle]
 pub extern fn kmain(bootloader_info: &BootloaderInfo) {
+    // Disable hardware interrupts
+    interrupts::disable();
+
     vga_buffer::clear_screen();
     
     let free_memory_areas = memory::init(bootloader_info); 
@@ -58,8 +61,11 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     // Initializing tasks with free memory areas
     task::init(free_memory_areas);
 
+    // Enable hardware interrupts
+    interrupts::enable();
+
     unsafe {
-        task::execv("bin/shell");
+        task::execv("bin/cat");
     }
     
     loop {};
