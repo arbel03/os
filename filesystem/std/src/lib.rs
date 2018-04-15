@@ -22,16 +22,14 @@ static mut HEAP: BitmapAllocator = BitmapAllocator::new(0, HEAP_SIZE, ::core::me
 
 #[no_mangle]
 pub unsafe fn _start() {
-    io::printf("Process started.\n");
     HEAP.set_bitmap_start(&HEAP_AREA as *const u8 as usize);
     HEAP.init();
 
     extern "Rust" {
         fn main(argc: usize, args: *const str);
     }
-    main(0, "args");
+    main(0, "bin/elffile");
     exit();
-    loop {};
 }
 
 pub unsafe fn print_heap_state() {
@@ -56,6 +54,7 @@ pub unsafe fn start(_argc: isize, _args: *const *const u8) -> isize {
 
 pub fn exit() {
     io::printf("Process quit.\n");
+    loop {};
 }
 
 #[lang = "eh_personality"] 

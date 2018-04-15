@@ -22,18 +22,18 @@ pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize
     let current_process = CURRENT_PROCESS.as_ref().unwrap();
     match a {
         SYS_FOPEN => {         
-            let ptr = current_process.translate_data_address(b as u32);
+            let ptr = current_process.translate_to_physical_address(b as u32);
             open(to_str(ptr as usize, c)) 
         },
         SYS_PRINT => {
-            let ptr = current_process.translate_data_address(b as u32);
+            let ptr = current_process.translate_to_physical_address(b as u32);
             let string = to_str(ptr as usize, c);
-            print!("{:?} ", string.as_ptr());
+            // print!("{:#x} -> {:?} ", b, string.as_ptr());
             print!("{}", string);
             0
         },
         SYS_READ => {
-            let ptr = current_process.translate_data_address(c as u32);
+            let ptr = current_process.translate_to_physical_address(c as u32);
             let slice = slice::from_raw_parts_mut(ptr as *mut u8, d);
             read(b, slice)
         },

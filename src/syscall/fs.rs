@@ -5,7 +5,7 @@ pub unsafe fn open(file_name: &str) -> usize {
     if let Some(opened_descriptor) = FILESYSTEM.as_mut().unwrap().open_file(file_name) {
         return opened_descriptor;
     }
-    1
+    0xffffffff
 }
 
 pub unsafe fn seek(fd: usize, new_current: usize) -> usize {

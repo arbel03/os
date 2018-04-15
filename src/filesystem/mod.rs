@@ -24,7 +24,7 @@ pub struct ManagedFilesystem<'a, T: Filesystem> {
 #[allow(dead_code)]
 impl <'a, T: Filesystem>  ManagedFilesystem<'a, T> {
     pub fn open_file(&mut self, file_name: &str) -> Option<usize> {
-        println!("Opening file: \"{}\"", file_name);
+        // println!("Opening file: \"{}\"", file_name);
         if let Some(file_pointer) = self.filesystem.open_file(self.drive, file_name) {
             // println!("Got file pointer.");
             let mut lowest_index = self.descriptors.len();

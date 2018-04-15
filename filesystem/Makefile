@@ -16,4 +16,4 @@ clean-filesystem:
 copy-bins:
 	@mkdir -p build/isofiles/bin
 	@cp $(bin_files) build/isofiles/bin
-	@cp -r filesystem/precompiled/ build/isofiles/bin
+	@cp -r filesystem/files/ build/isofiles/bin

@@ -7,16 +7,17 @@ extern crate alloc;
 extern crate std;
 
 #[no_mangle]
-pub fn main(argc: usize, args: *const str) {
-    use alloc::string::ToString;
-    let string = "This string is in the heap.".to_string();
-    std::io::printf(&string);
-    // std::io::printf("\n");
-    // print_heap();
-}
-
-fn print_heap() {
-    unsafe {
-        std::print_heap_state();
+pub fn main(argc: usize, args: &str) {
+    let fd = std::fs::open(args);
+    if fd != 0xffffffff {
+        std::io::printf("Printing contents of file \"");
+        std::io::printf(args);
+        std::io::printf("\":\n");
+        let mut vector = vec![0u8;512];
+        std::fs::read(fd, &mut vector);
+        use core::str;
+        std::io::printf(unsafe { str::from_utf8_unchecked(&vector) });
+    } else {
+        std::io::printf("Error opening file.\n");
     }
 }
