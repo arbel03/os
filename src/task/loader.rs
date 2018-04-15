@@ -31,24 +31,31 @@ unsafe fn alloc_segment(size: usize, align: usize) -> *mut u8 {
 
 unsafe fn load_segments(fd: usize, entries: Vec<ProgramHeaderEntry>) -> Vec<SegmentDescriptor> {
     let mut segments: Vec<SegmentDescriptor> = Vec::new();
-    segments.push(SegmentDescriptor::NULL);
 
-    for (index, entry) in entries.iter().enumerate() {
+    for entry in entries.iter() {
         if entry.entry_type.get_type() == EntryType::PtLoad {
-            let ptr = alloc_segment((entry.mem_size + entry.vaddr) as usize, entry.align as usize);
+            // Segment is an executable segment
+            let ptr = if entry.flags & 0x01 == 0x01 {
+                // Allocating the needed size
+                let ptr = alloc_segment((entry.mem_size + entry.vaddr) as usize, entry.align as usize);
+                
+                // Adding a new user space code descriptor
+                segments.insert(0, SegmentDescriptor::new(ptr as u32, ptr as u32 + entry.vaddr + entry.mem_size, 0b11111010, 0b0100));    
 
-            // Loading segment from disk to memory.
+                ptr
+            } else {
+                // Allocating the needed size + stack size
+                let ptr = alloc_segment((entry.mem_size + entry.vaddr + 1024*50) as usize, entry.align as usize);
+
+                // Adding a new user space data descriptor
+                segments.push(SegmentDescriptor::new(ptr as u32, ptr as u32 + (entry.mem_size + entry.vaddr + 1024*50 as u32), 0b11110010, 0b0100));
+                
+                ptr
+            };
+
             let slice = slice::from_raw_parts_mut((entry.vaddr as usize + ptr as usize) as *mut u8, entry.file_size as usize);
             seek(fd, entry.offset as usize);
             read(fd, slice);
-
-            if segments.len() == 1 {
-                // Adding a new user space code descriptor
-                segments.push(SegmentDescriptor::new(ptr as u32, ptr as u32 + entry.vaddr + entry.mem_size, 0b11111010, 0b0100));    
-            } else {
-                // Adding a new user space data descriptor
-                segments.push(SegmentDescriptor::new(ptr as u32, ptr as u32 + entry.vaddr + entry.mem_size, 0b11110010, 0b0100));
-            }
         }
     }
 
@@ -68,13 +75,7 @@ pub(in super) unsafe fn load_elf(file_name: &str) -> (ElfHeader, Vec<SegmentDesc
 
     entries = read_ph_entries(fd, &elf_header);
     // First is null, second is code, third is data
-    let mut segments = load_segments(fd, entries);
-
-    // Adding a stack segment for the process
-    let stack_size = 1024*50;
-    // Passing align=1 to disable aligning
-    let stack_base = alloc_segment(stack_size, 1) as u32;
-    segments.push(SegmentDescriptor::new(stack_base, stack_base + stack_size as u32, 0b11110010, 0b0100));
+    let segments = load_segments(fd, entries);
 
     return (elf_header, segments);
 }

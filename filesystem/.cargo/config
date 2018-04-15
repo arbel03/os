@@ -2,6 +2,5 @@
 linker = "i686-elf-ld"
 rustflags = [
     "-C", "link-arg=-Ttext=0x0",
-    "-C", "link-arg=-nostartfiles",
     "-C", "target-feature=+crt-static",
 ]

@@ -1,5 +1,5 @@
 use memory::gdt::SegmentDescriptorTable;
-use memory::segmentation::{ SegmentDescriptor, SegmentSelector };
+use memory::segmentation::{ SegmentDescriptor };
 use alloc::vec::Vec;
 
 #[repr(packed)]
@@ -93,27 +93,22 @@ impl Process {
     }
 
     pub fn set_ldt_descriptors(&mut self, descriptors: Vec<SegmentDescriptor>) {
-        // self.ldt.init_with_length(3);
         self.address_space = descriptors;
         self.ldt.set_descriptors(&self.address_space);
     }
 
     pub fn translate_data_address(&self, virtual_address: u32) -> u32 {
-        return self.address_space[1].base + virtual_address;
+        return self.address_space[0].base + virtual_address;
     }
 
-    pub fn translate_stack_address(&self, virtual_address: u32) -> u32 {
-        return self.address_space[2].base + virtual_address;
-    }
-
-    pub fn setup_process(&mut self, ss0: u16, esp0: u32, entry_point: u32, esp: u32, code_selector: u16, data_selector: u16, stack_selector: u16) {
+    pub fn setup_process(&mut self, ss0: u16, esp0: u32, entry_point: u32, esp: u32, code_selector: u16, data_selector: u16) {
         self.tss.ss0 = ss0 as u32;
         self.tss.esp0 = esp0;
         self.tss.eip = entry_point;
         self.tss.esp = esp;
 
-        use memory::segmentation::TableType;
-        self.tss.ss = stack_selector as u32;
+        self.tss.ss = data_selector as u32;
+        
         // Data segments
         self.tss.ds = data_selector as u32;
         self.tss.gs = data_selector as u32;

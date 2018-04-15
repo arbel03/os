@@ -23,18 +23,13 @@ pub unsafe fn setup_descriptors(bootloader_info: &BootloaderInfo, free_memory_ar
     let start = bootloader_info.kernel_end;
     let size = free_memory_areas.get_last_address() - start;
 
-    // User Code
-    GDT.set_descriptor(DescriptorType::UserCode, SegmentDescriptor::new(start, size, 0b11111010, 0b0100));
-    // User Data
-    GDT.set_descriptor(DescriptorType::UserData, SegmentDescriptor::new(start, size, 0b11110010, 0b0100));
-
     // Set and load the table
     GDT.load();
 
     utils::load_ds(GDT.get_selector(DescriptorType::KernelData, 0));
+    utils::load_cs(GDT.get_selector(DescriptorType::KernelCode, 0));
     // TODO: setup stack in a whole different segment to detect stack overflows
     utils::load_ss(GDT.get_selector(DescriptorType::KernelData, 0));
-    utils::load_cs(GDT.get_selector(DescriptorType::KernelCode, 0));
 }
 
 fn get_free_memory_areas(memory_map: MemoryMapIterator, bootloader_info: &BootloaderInfo) -> MemoryAreas {

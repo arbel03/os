@@ -7,8 +7,6 @@ pub enum DescriptorType {
     KernelData = 2,
     TssDescriptor = 3,
     LdtDescriptor = 4,
-    UserCode = 5,
-    UserData = 6,
 }
 
 pub type SegmentDescriptorEntry = u64;

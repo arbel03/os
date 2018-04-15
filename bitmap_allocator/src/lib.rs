@@ -11,8 +11,8 @@ extern crate alloc;
 mod test;
 mod cell;
 
+pub use cell::CellState;
 use core::mem;
-use cell::CellState;
 use alloc::allocator::{ Alloc, Layout, AllocErr };
 
 pub struct BitmapAllocator {
@@ -45,7 +45,7 @@ impl BitmapAllocator {
         }
     }
 
-    fn get_cell(&self, index: usize) -> &mut CellState {
+    pub fn get_cell(&self, index: usize) -> &mut CellState {
         if index >= self.block_count {
             panic!("Tried to access bitmap cell outside of bounds.");
         }
@@ -56,6 +56,10 @@ impl BitmapAllocator {
 
     fn get_data_start(&self) -> usize {
         return self.block_count * mem::size_of::<CellState>() + self.bitmap_start as usize;
+    }
+
+    pub fn get_block_count(&self) -> usize {
+        return self.block_count;
     }
 }
 

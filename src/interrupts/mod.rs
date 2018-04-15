@@ -115,6 +115,7 @@ pub fn init() {
         // Exceptions
         IDT.exceptions.double_fault =  define_interrupt_with_error_code!(double_fault, 0);
         IDT.exceptions.general_protection_fault = define_interrupt_with_error_code!(general_protection_fault, 0);
+        IDT.exceptions.invalid_opcode = define_interrupt!(invalid_opcode ,0);
 
         // Hardware interrupts       
         IDT.set_hardware_interrupt(1, define_interrupt!(keyboard_irq, 0));              
@@ -137,6 +138,11 @@ pub fn disable() {
     unsafe {
         asm!("cli");
     }
+}
+
+extern "C" fn invalid_opcode(_stack_frame: &idt::ExceptionStackFrame) {
+    println!("Invalid opcode.");
+    loop {};
 }
 
 extern "C" fn primary_ata_controller(_stack_frame: &idt::ExceptionStackFrame) {
