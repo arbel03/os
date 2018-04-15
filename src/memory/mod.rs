@@ -10,7 +10,7 @@ use dtables;
 
 pub static mut GDT: gdt::SegmentDescriptorTable = dtables::DescriptorTable::new();
 
-pub unsafe fn setup_descriptors(bootloader_info: &BootloaderInfo, free_memory_areas: &MemoryAreas) {
+pub unsafe fn setup_descriptors(_bootloader_info: &BootloaderInfo, free_memory_areas: &MemoryAreas) {
     use self::gdt::{ DescriptorType, Gdt };
     use self::segmentation::SegmentDescriptor;
     GDT.init();
@@ -19,9 +19,6 @@ pub unsafe fn setup_descriptors(bootloader_info: &BootloaderInfo, free_memory_ar
     GDT.set_descriptor(DescriptorType::KernelCode, SegmentDescriptor::new(0, free_memory_areas.get_last_address(), 0x9A, 0b0100));
     // Kernel Data Segment
     GDT.set_descriptor(DescriptorType::KernelData, SegmentDescriptor::new(0, free_memory_areas.get_last_address(), 0x92, 0b0100));
-
-    let start = bootloader_info.kernel_end;
-    let size = free_memory_areas.get_last_address() - start;
 
     // Set and load the table
     GDT.load();

@@ -11,38 +11,37 @@ mod syscall;
 pub mod fs;
 pub mod io;
  
-
 // Setting up heap
 use bitmap_allocator::BitmapAllocator;
 
-const HEAP_SIZE: usize = 1024;
-static mut HEAP: [u8;HEAP_SIZE] = [0u8;HEAP_SIZE];
+const HEAP_SIZE: usize = 1024*5;
+static mut HEAP_AREA: [u8;HEAP_SIZE] = [0u8;HEAP_SIZE];
 
 #[global_allocator]
-static mut GLOBAL: BitmapAllocator = BitmapAllocator::new(0x0, HEAP_SIZE, ::core::mem::size_of::<usize>()*4);
+static mut HEAP: BitmapAllocator = BitmapAllocator::new(0, HEAP_SIZE, ::core::mem::size_of::<usize>());
 
 #[no_mangle]
 pub unsafe fn _start() {
     io::printf("Process started.\n");
-    GLOBAL.set_bitmap_start(0x0 /*&HEAP as *const u8 as usize*/);
-    GLOBAL.init();
+    HEAP.set_bitmap_start(&HEAP_AREA as *const u8 as usize);
+    HEAP.init();
 
     extern "Rust" {
         fn main(argc: usize, args: *const str);
     }
-    main(0, "Hello" as *const str);
+    main(0, "args");
     exit();
     loop {};
 }
 
 pub unsafe fn print_heap_state() {
     use bitmap_allocator::CellState;
-    for i in 0..GLOBAL.get_block_count() {
-        let cell = GLOBAL.get_cell(i);
+    for i in 0..HEAP.get_block_count() {
+        let cell = HEAP.get_cell(i);
         let desc = match *cell {
             CellState::Free => "_",
-            CellState::Allocated => ">",
-            CellState::Boundary => "|",
+            CellState::Allocated => "-",
+            CellState::Boundary => "<",
         };
         io::printf(desc);
     }

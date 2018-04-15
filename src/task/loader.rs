@@ -25,7 +25,7 @@ unsafe fn read_ph_entries(file_descriptor: usize, header: &ElfHeader) -> Vec<Pro
 unsafe fn alloc_segment(size: usize, align: usize) -> *mut u8 {
     // Alloc space for the new process.
     let layout = Layout::from_size_align(size, align).unwrap();
-    let ptr = PROCESS_ALLOCATOR.as_mut().unwrap().alloc(layout).unwrap();
+    let ptr = (&*PROCESS_ALLOCATOR.as_mut().unwrap()).alloc(layout).unwrap();
     ptr
 }
 

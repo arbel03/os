@@ -1,6 +1,17 @@
+[target.i686-unknown-linux-gnu]
+linker = "i686-elf-gcc"
+rustflags = [
+    # "-C", "link-arg=-Wl,-Ttext=0x0",
+    "-C", "target-feature=+crt-static",
+    "-C", "link-arg=-nostartfiles",
+    # "-Z", ""
+]
+
 [target.i686-bin]
 linker = "i686-elf-ld"
 rustflags = [
     "-C", "link-arg=-Ttext=0x0",
-    "-C", "target-feature=+crt-static",
+    # "-C", "target-feature=+crt-static",
+    # "-C", "link-arg=-nostartfiles",
+    "-Z", "linker-flavor=ld",
 ]

@@ -28,6 +28,7 @@ pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize
         SYS_PRINT => {
             let ptr = current_process.translate_data_address(b as u32);
             let string = to_str(ptr as usize, c);
+            print!("{:?} ", string.as_ptr());
             print!("{}", string);
             0
         },

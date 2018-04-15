@@ -63,7 +63,7 @@ impl BitmapAllocator {
     }
 }
 
-unsafe impl Alloc for BitmapAllocator {
+unsafe impl<'a> Alloc for &'a BitmapAllocator {
     unsafe fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {
         let requested_size = layout.size() + layout.align();
 
@@ -121,16 +121,6 @@ unsafe impl Alloc for BitmapAllocator {
                 break;
             }
         }
-    }
-}
-
-unsafe impl <'a> Alloc for &'a BitmapAllocator {
-    unsafe fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {
-        self.alloc(layout)
-    }
-
-    unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
-        self.dealloc(ptr, layout)
     }
 }
 

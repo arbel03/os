@@ -73,9 +73,9 @@ impl FatDirectory {
         (self.first_cluster_high as u32) << 16 | self.first_cluster_low as u32
     }
 
-    pub fn get_size(&self) -> usize {
-        self.file_size as usize
-    }
+    // pub fn get_size(&self) -> usize {
+    //     self.file_size as usize
+    // }
 
     pub fn is_lfn(&self) -> bool {
         self.attributes as u8 == FileAttributes::LongName as u8

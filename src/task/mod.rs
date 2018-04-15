@@ -77,6 +77,7 @@ pub unsafe fn execv(file_name: &str) {
     mov fs, ax
     mov gs, ax
     mov es, ax
+    mov ebp, $1
     iretd
     " ::
     "r"(data_selector as u32),

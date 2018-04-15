@@ -17,11 +17,11 @@ impl Heap {
 
 unsafe impl <'a> Alloc for &'a Heap {
     unsafe fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {
-        self.heap.lock().alloc(layout)
+        (&*self.heap.lock()).alloc(layout)
     }
 
     unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
-        self.heap.lock().dealloc(ptr, layout)
+        (&*self.heap.lock()).dealloc(ptr, layout)
     }
 }
 

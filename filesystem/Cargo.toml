@@ -3,6 +3,12 @@ name = "binaries"
 version = "0.1.0"
 authors = ["Arbel Israeli <arbel03@gmail.com>"]
 
+[profile.release]
+panic="abort"
+
+[profile.dev]
+panic="abort"
+
 [dependencies]
 std = { path="std" }
 
