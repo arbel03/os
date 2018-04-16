@@ -1,23 +1,40 @@
 #![feature(alloc)]
+#![feature(start)]
 #![no_std]
-#![no_main]
 
 #[macro_use]
 extern crate alloc;
+#[macro_use]
 extern crate std;
 
+use std::io;
+
+#[start]
 #[no_mangle]
-pub fn main(argc: usize, args: &str) {
-    let fd = std::fs::open(args);
-    if fd != 0xffffffff {
-        std::io::printf("Printing contents of file \"");
-        std::io::printf(args);
-        std::io::printf("\":\n");
-        let mut vector = vec![0u8;512];
-        std::fs::read(fd, &mut vector);
-        use core::str;
-        std::io::printf(unsafe { str::from_utf8_unchecked(&vector) });
-    } else {
-        std::io::printf("Error opening file.\n");
-    }
+pub fn start(argc: isize, args: *const *const u8) -> isize {
+    test_arg();
+    // use core::str;
+    // println!("argc: {}, args: {:?}", argc, args);
+    // println!("*args: {:?}", unsafe { *args });
+
+    // let file_name = unsafe {
+    //     let arg_ptr: *const u8 = *args as *const u8;
+    //     std::args::terminated_string(arg_ptr) 
+    // };
+
+    // println!("Filename: {}", file_name);
+    // let fd = std::syscalls::open(file_name);
+    // if fd != 0xffffffff {
+    //     let mut vector = vec![0u8;512];
+    //     std::syscalls::read(fd, &mut vector);
+    //     print!("{}", unsafe { str::from_utf8_unchecked(&vector) });
+    // } else {
+    //     println!("Error opening file.");
+    // }
+    0
+}
+
+pub fn test_arg() {
+    let argument = "Hello this string is null terminated.\x00";
+    let parsed_string = unsafe { std::args::terminated_string(argument.as_ptr()) };
 }

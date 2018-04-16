@@ -13,9 +13,5 @@ panic="abort"
 std = { path="std" }
 
 [[bin]]
-name = "shell"
-path = "shell.rs"
-
-[[bin]]
 name = "cat"
 path = "cat.rs"

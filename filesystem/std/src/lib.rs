@@ -7,9 +7,10 @@
 extern crate rlibc;
 extern crate bitmap_allocator;
 
-mod syscall;
-pub mod fs;
+#[macro_use]
 pub mod io;
+pub mod args;
+pub mod syscalls;
  
 // Setting up heap
 use bitmap_allocator::BitmapAllocator;
@@ -26,9 +27,11 @@ pub unsafe fn _start() {
     HEAP.init();
 
     extern "Rust" {
-        fn main(argc: usize, args: *const str);
+        fn start(argc: isize, args: *const *const u8) -> isize;
     }
-    main(0, "bin/elffile");
+    let file_name = "bin/elffile\x00";
+    let arg1_ptr = file_name.as_ptr();
+    start(1, &arg1_ptr as *const *const u8);
     exit();
 }
 
@@ -41,19 +44,13 @@ pub unsafe fn print_heap_state() {
             CellState::Allocated => "-",
             CellState::Boundary => "<",
         };
-        io::printf(desc);
+        print!("{}", desc);
     }
-    io::printf("\n");
-}
-
-#[start]
-#[no_mangle]
-pub unsafe fn start(_argc: isize, _args: *const *const u8) -> isize {
-    0
+    print!("\n");
 }
 
 pub fn exit() {
-    io::printf("Process quit.\n");
+    print!("Process quit.\n");
     loop {};
 }
 
