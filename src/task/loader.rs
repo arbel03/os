@@ -25,11 +25,11 @@ unsafe fn read_ph_entries(file_descriptor: usize, header: &ElfHeader) -> Vec<Pro
 unsafe fn alloc_process(size: usize, align: usize) -> *mut u8 {
     // Alloc space for the new process.
     let layout = Layout::from_size_align(size, align).unwrap();
-    let ptr = (&*PROCESS_ALLOCATOR.as_mut().unwrap()).alloc(layout).unwrap();
+    let ptr = (&PROCESS_ALLOCATOR).alloc(layout).unwrap();
     ptr
 }
 
-unsafe fn load_segments(fd: usize, entries: Vec<ProgramHeaderEntry>) -> Vec<SegmentDescriptor> {
+fn get_process_size_in_memory(entries: &Vec<ProgramHeaderEntry>) -> usize {
     let mut max_address = 0;
     for entry in entries.iter() {
         if entry.entry_type.get_type() == EntryType::PtLoad {
@@ -38,16 +38,20 @@ unsafe fn load_segments(fd: usize, entries: Vec<ProgramHeaderEntry>) -> Vec<Segm
             }
         }
     }
+    return max_address as usize;
+}
 
+unsafe fn load_segments(fd: usize, entries: Vec<ProgramHeaderEntry>) -> Vec<SegmentDescriptor> {
     let mut segments: Vec<SegmentDescriptor> = Vec::new();
+    let process_size = get_process_size_in_memory(&entries);
 
-    // Allocating the needed size
-    let ptr = alloc_process(max_address as usize, 1);
+    // Allocating the needed size, no alignment
+    let ptr = alloc_process(process_size, 1);
 
     for entry in entries.iter() {
         if entry.entry_type.get_type() == EntryType::PtLoad {
             // Segment is an executable segment
-            let ptr = if entry.flags & 0x01 == 0x01 {
+            let ptr = if entry.flags & Flags::Executable as u32 == Flags::Executable as u32 {
                 // Adding a new user space code descriptor
                 segments.insert(0, SegmentDescriptor::new(ptr as u32, ptr as u32 + entry.vaddr + entry.mem_size, 0b11111010, 0b0100));    
 
@@ -84,4 +88,3 @@ pub(in super) unsafe fn load_elf(file_name: &str) -> (ElfHeader, Vec<SegmentDesc
 
     return (elf_header, segments);
 }
-

@@ -2,6 +2,24 @@ use dtables::Encodable;
 
 // Segment Selector
 
+#[repr(u8)]
+pub enum AccessFlags {
+    Present = 1 << 7,
+    PL0 = 0,
+    PL3 = 3 << 5,
+    Executable = 1 << 3,
+    Direction = 1 << 2,
+    ReadWrite = 1 << 1,
+    Accessed = 1,
+    AlwaysOne = 1 << 4,
+}
+
+#[repr(u8)]
+pub enum Flags {
+    Granularity = 1 << 3,
+    Size = 1 << 2,
+}
+
 pub enum TableType { 
     GDT = 0, 
     LDT = 1,

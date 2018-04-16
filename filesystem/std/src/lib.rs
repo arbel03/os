@@ -29,24 +29,10 @@ pub unsafe fn _start() {
     extern "Rust" {
         fn start(argc: isize, args: *const *const u8) -> isize;
     }
-    let file_name = "bin/elffile\x00";
+    let file_name = "files/elffile\x00";
     let arg1_ptr = file_name.as_ptr();
     start(1, &arg1_ptr as *const *const u8);
     exit();
-}
-
-pub unsafe fn print_heap_state() {
-    use bitmap_allocator::CellState;
-    for i in 0..HEAP.get_block_count() {
-        let cell = HEAP.get_cell(i);
-        let desc = match *cell {
-            CellState::Free => "_",
-            CellState::Allocated => "-",
-            CellState::Boundary => "<",
-        };
-        print!("{}", desc);
-    }
-    print!("\n");
 }
 
 pub fn exit() {

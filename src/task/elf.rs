@@ -46,6 +46,14 @@ pub enum EntryType {
     PtLoHios(u32),
 }
 
+#[repr(u32)]
+#[allow(dead_code)]
+pub enum Flags {
+    Executable = 0x1,
+    Writeable = 0x2,
+    Readable = 0x4,
+}
+
 #[derive(Clone, Copy, Debug)]
 #[repr(packed, C)]
 pub struct ProgramEntryType(u32);

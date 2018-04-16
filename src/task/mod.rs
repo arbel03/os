@@ -6,16 +6,23 @@ use BitmapAllocator;
 use self::process::*;
 use alloc::boxed::Box;
 
-static mut PROCESS_ALLOCATOR: Option<BitmapAllocator> = None;
+static mut PROCESS_ALLOCATOR: BitmapAllocator = BitmapAllocator::new(0x0, 0x0, 0x0);
 pub static mut CURRENT_PROCESS: Option<Box<Process>> = None;
 
 pub fn init(free_memory_areas: ::memory::MemoryAreas) {
+    println!("{:?}", free_memory_areas);
     // Set up an allocator for the process area
-    let process_area = free_memory_areas.0[0];
-    println!("Allocating processes from {:#x} to {:#x}.", process_area.base, process_area.base+process_area.size);
-    unsafe {
-        PROCESS_ALLOCATOR = Some(BitmapAllocator::new(process_area.base, process_area.size, process_area.size/1000));
-        PROCESS_ALLOCATOR.as_mut().unwrap().init();
+    if free_memory_areas.0.len() > 0 {
+        let process_area = free_memory_areas.0[0];
+        println!("Allocating processes from {:#x} to {:#x}.", process_area.base, process_area.base+process_area.size);
+        unsafe {
+            PROCESS_ALLOCATOR.set_bitmap_start(process_area.base);
+            PROCESS_ALLOCATOR.set_block_size(process_area.size/100);
+            PROCESS_ALLOCATOR.set_size(process_area.size);
+            PROCESS_ALLOCATOR.init();
+        }
+    } else {
+        panic!("No space for process allocator.");
     }
 }
 

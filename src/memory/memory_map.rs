@@ -24,7 +24,7 @@ pub struct MemoryMapEntry {
     _acpi_info: u32,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct MemoryArea {
     pub base: usize,
     pub size: usize,
@@ -68,6 +68,7 @@ impl PartialEq for MemoryArea {
     }
 }
 
+#[derive(Debug)]
 pub struct MemoryAreas(pub Vec<MemoryArea>);
 
 impl MemoryAreas {

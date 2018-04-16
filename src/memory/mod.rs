@@ -12,20 +12,27 @@ pub static mut GDT: gdt::SegmentDescriptorTable = dtables::DescriptorTable::new(
 
 pub unsafe fn setup_descriptors(_bootloader_info: &BootloaderInfo, free_memory_areas: &MemoryAreas) {
     use self::gdt::{ DescriptorType, Gdt };
-    use self::segmentation::SegmentDescriptor;
+    use self::segmentation::{ SegmentDescriptor, Flags, AccessFlags };
     GDT.init();
     
+    // Dividing limit by 4K since granularity flag is on
+    let flags = Flags::Size as u8 | Flags::Granularity as u8;
+    let limit = free_memory_areas.get_last_address() / 0x1000;
+
     // Kernel Code Segment
-    GDT.set_descriptor(DescriptorType::KernelCode, SegmentDescriptor::new(0, free_memory_areas.get_last_address(), 0x9A, 0b0100));
+    let access_byte = AccessFlags::PL0 as u8 | AccessFlags::ReadWrite as u8 | AccessFlags::Executable as u8 | AccessFlags::AlwaysOne as u8 | AccessFlags::Present as u8;
+    let kernel_code = SegmentDescriptor::new(0, limit, access_byte, flags);
+    GDT.set_descriptor(DescriptorType::KernelCode, kernel_code);
     // Kernel Data Segment
-    GDT.set_descriptor(DescriptorType::KernelData, SegmentDescriptor::new(0, free_memory_areas.get_last_address(), 0x92, 0b0100));
+    let access_byte = AccessFlags::PL0 as u8 | AccessFlags::ReadWrite as u8 | AccessFlags::Present as u8 | AccessFlags::AlwaysOne as u8;
+    let kernel_data = SegmentDescriptor::new(0, limit, access_byte, flags);
+    GDT.set_descriptor(DescriptorType::KernelData, kernel_data);
 
     // Set and load the table
     GDT.load();
 
     utils::load_ds(GDT.get_selector(DescriptorType::KernelData, 0));
     utils::load_cs(GDT.get_selector(DescriptorType::KernelCode, 0));
-    // TODO: setup stack in a whole different segment to detect stack overflows
     utils::load_ss(GDT.get_selector(DescriptorType::KernelData, 0));
 }
 
@@ -56,18 +63,23 @@ fn get_free_memory_areas(memory_map: MemoryMapIterator, bootloader_info: &Bootlo
 }
 
 pub fn init(bootloader_info: &BootloaderInfo) -> MemoryAreas {
-    use core::cmp::min;
     use HEAP;
 
-    let mut memory_iter = MemoryMapIterator::new(&bootloader_info, MemoryAreaType::Free);
-    let first_free_memory_area = memory_iter.next().unwrap();
-    let heap_start = first_free_memory_area.base as usize;
-    let heap_size = min(first_free_memory_area.size, 1024*1000) as usize;
-    (*HEAP).lock().set_bitmap_start(heap_start);
-    (*HEAP).lock().set_size(heap_size);
-    // FIXME: Crashing when initializing heap here.
-    // (*HEAP).lock().init();
-    println!("Setup Heap at {:#08x}, size: {:#08x}", heap_start, heap_size);
+    let mut memory_iter = MemoryMapIterator::new(bootloader_info, MemoryAreaType::Free);
+
+    while let Some(free_memory_area) = memory_iter.next() {
+        if free_memory_area.size >= 0x1000 {
+            let heap_start = free_memory_area.base as usize;
+            let heap_size = free_memory_area.size as usize;
+
+            println!("Setup Heap at {:#08x}, size: {:#08x}", heap_start, heap_size);    
+            HEAP.lock().set_bitmap_start(heap_start);
+            HEAP.lock().set_block_size(::core::mem::size_of::<usize>()*4);
+            HEAP.lock().set_size(heap_size);
+            // HEAP.lock().init();
+            break;
+        }
+    }
 
     let free_memory_areas = get_free_memory_areas(memory_iter, bootloader_info);
     unsafe { setup_descriptors(bootloader_info, &free_memory_areas) };

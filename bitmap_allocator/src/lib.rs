@@ -35,6 +35,10 @@ impl BitmapAllocator {
         self.bitmap_start = bitmap_start;
     }
 
+    pub fn set_block_size(&mut self, block_size: usize) {
+        self.block_size = block_size;
+    }
+
     pub fn set_size(&mut self, size: usize) {
         self.block_count = size / (mem::size_of::<CellState>() + self.block_size);
     }

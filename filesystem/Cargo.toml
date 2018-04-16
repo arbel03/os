@@ -15,3 +15,7 @@ std = { path="std" }
 [[bin]]
 name = "cat"
 path = "cat.rs"
+
+[[bin]]
+name = "ls"
+path = "ls.rs"
