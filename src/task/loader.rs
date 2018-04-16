@@ -22,7 +22,7 @@ unsafe fn read_ph_entries(file_descriptor: usize, header: &ElfHeader) -> Vec<Pro
     return ph_entries;
 }
 
-unsafe fn alloc_segment(size: usize, align: usize) -> *mut u8 {
+unsafe fn alloc_process(size: usize, align: usize) -> *mut u8 {
     // Alloc space for the new process.
     let layout = Layout::from_size_align(size, align).unwrap();
     let ptr = (&*PROCESS_ALLOCATOR.as_mut().unwrap()).alloc(layout).unwrap();
@@ -30,23 +30,29 @@ unsafe fn alloc_segment(size: usize, align: usize) -> *mut u8 {
 }
 
 unsafe fn load_segments(fd: usize, entries: Vec<ProgramHeaderEntry>) -> Vec<SegmentDescriptor> {
+    let mut max_address = 0;
+    for entry in entries.iter() {
+        if entry.entry_type.get_type() == EntryType::PtLoad {
+            if entry.vaddr + entry.mem_size < max_address {
+                max_address = entry.vaddr + entry.mem_size;
+            }
+        }
+    }
+
     let mut segments: Vec<SegmentDescriptor> = Vec::new();
+
+    // Allocating the needed size
+    let ptr = alloc_process(max_address as usize, 1);
 
     for entry in entries.iter() {
         if entry.entry_type.get_type() == EntryType::PtLoad {
             // Segment is an executable segment
             let ptr = if entry.flags & 0x01 == 0x01 {
-                // Allocating the needed size
-                let ptr = alloc_segment((entry.mem_size + entry.vaddr) as usize, entry.align as usize);
-                
                 // Adding a new user space code descriptor
                 segments.insert(0, SegmentDescriptor::new(ptr as u32, ptr as u32 + entry.vaddr + entry.mem_size, 0b11111010, 0b0100));    
 
                 ptr
             } else {
-                // Allocating the needed size + stack size
-                let ptr = alloc_segment((entry.mem_size + entry.vaddr + 1024*50) as usize, entry.align as usize);
-
                 // Adding a new user space data descriptor
                 segments.push(SegmentDescriptor::new(ptr as u32, ptr as u32 + (entry.mem_size + entry.vaddr + 1024*50 as u32), 0b11110010, 0b0100));
                 
@@ -58,7 +64,6 @@ unsafe fn load_segments(fd: usize, entries: Vec<ProgramHeaderEntry>) -> Vec<Segm
             read(fd, slice);
         }
     }
-
     // First is null, second is code, third is data.
     return segments;
 }

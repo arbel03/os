@@ -4,7 +4,7 @@ pub unsafe fn terminated_string<'a>(start: *const u8) -> &'a str {
     let mut length: isize = 0;
     loop {
         let current = start.offset(length);
-        println!("{:?} - {}", current, ptr::read(current));
+        // println!("{:?} - {}", current, ptr::read(current));
         if ptr::read(current) == 0u8 {
             break;
         }

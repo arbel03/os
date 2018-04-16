@@ -98,11 +98,7 @@ impl Process {
     }
 
     pub fn translate_to_physical_address(&self, virtual_address: u32) -> u32 {
-        if virtual_address < self.address_space[0].limit {
-            return self.address_space[0].base + virtual_address;
-        } else {
-            return self.address_space[1].base + virtual_address;
-        }
+        return self.address_space[0].base + virtual_address;
     }
 
     pub fn setup_process(&mut self, ss0: u16, esp0: u32, entry_point: u32, esp: u32, code_selector: u16, data_selector: u16) {
