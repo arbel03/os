@@ -13,3 +13,11 @@ pub fn read(fd: usize, buffer: &mut [u8]) -> usize {
         syscall3(0x3, fd, buffer.as_ptr() as usize, buffer.len())
     }
 }
+
+pub fn filesz(fd: usize) -> usize {
+    use syscall::syscall1;
+    // SYSCALL(SYS_FILESZ, fd)
+    unsafe {
+        syscall1(0x4, fd)
+    }
+}

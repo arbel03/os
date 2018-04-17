@@ -15,6 +15,7 @@ pub fn to_str<'a>(ptr: usize, size: usize) -> &'a str {
 const SYS_FOPEN: usize = 0x1;
 const SYS_PRINT: usize = 0x2;
 const SYS_READ: usize = 0x03;
+const SYS_FILESZ: usize = 0x04;
 const UNDEFINED_SYSCALL: usize = 0xff;
 
 #[allow(unused_variables)]
@@ -36,6 +37,9 @@ pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize
             let ptr = current_process.translate_to_physical_address(c as u32);
             let slice = slice::from_raw_parts_mut(ptr as *mut u8, d);
             read(b, slice)
+        },
+        SYS_FILESZ => {
+            file_size(b)
         },
         _ => UNDEFINED_SYSCALL
     }

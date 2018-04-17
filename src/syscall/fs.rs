@@ -17,3 +17,7 @@ pub unsafe fn seek(fd: usize, new_current: usize) -> usize {
 pub unsafe fn read(fd: usize, read_buffer: &mut [u8]) -> usize {
     FILESYSTEM.as_mut().unwrap().read_file(fd, read_buffer)
 }
+
+pub unsafe fn file_size(fd: usize) -> usize {
+    FILESYSTEM.as_mut().unwrap().get_file_size(fd)
+}

@@ -13,7 +13,8 @@ pub fn main(argc: usize, args: &str) {
         std::io::printf("Printing contents of file \"");
         std::io::printf(args);
         std::io::printf("\":\n");
-        let mut vector = vec![0u8;512];
+        let file_size = std::fs::filesz(fd);
+        let mut vector = vec![0u8;file_size];
         std::fs::read(fd, &mut vector);
         use core::str;
         std::io::printf(unsafe { str::from_utf8_unchecked(&vector) });

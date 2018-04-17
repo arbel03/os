@@ -84,13 +84,15 @@ impl <'a, T: Filesystem>  ManagedFilesystem<'a, T> {
     }
 
     // This is not a syscall
-    pub fn get_current_offset(&self, descriptor: usize) -> usize {
+    pub fn get_file_size(&self, descriptor: usize) -> usize {
         if let Some(descriptor) = self.descriptors.iter().find(|x| x.get_id() == descriptor) {
             let file_pointer = descriptor.get_pointer();
-            return file_pointer.get_current();
+            let file = file_pointer.get_file();
+            return file.get_size();
         } else {
-            return 0xFFFFFFFF;
+            println!("Descriptor {} is not open.", descriptor);
         }
+        0
     }
 }
 
