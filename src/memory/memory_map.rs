@@ -1,18 +1,30 @@
 use BootloaderInfo;
 use core::slice;
-use core::cmp::Ordering;
 use alloc::Vec;
+use core::fmt;
 
-#[repr(usize)]
-#[derive(PartialEq, Clone, Copy)]
 #[allow(dead_code)]
+#[repr(u32)]
+#[derive(Debug)]
 pub enum MemoryAreaType {
     Free = 1,
     Reserved = 2,
     AcpiReclaimable = 3,
     AcpiNonVolatile = 4,
     Bad = 5,
-    All = 0xff,
+}
+
+impl From<u32> for MemoryAreaType {
+    fn from(x: u32) -> Self {
+        match x {
+            1 => MemoryAreaType::Free,
+            2 => MemoryAreaType::Reserved,
+            3 => MemoryAreaType::AcpiNonVolatile,
+            4 => MemoryAreaType::AcpiReclaimable,
+            5 => MemoryAreaType::Bad,
+            _ => panic!("Value {} is not a variation of enum MemoryAreaType.", x),
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -20,8 +32,28 @@ pub enum MemoryAreaType {
 pub struct MemoryMapEntry {
     pub base: u64,
     pub size: u64,
-    pub region_type: u32,
-    _acpi_info: u32,
+    region_type: u32,
+    acpi_info: u32,
+}
+
+impl MemoryMapEntry {
+    pub fn get_base(&self) -> u64 {
+        self.base
+    }
+
+    pub fn get_size(&self) -> u64 {
+        self.size
+    }
+
+    pub fn get_region_type(&self) -> MemoryAreaType {
+        MemoryAreaType::from(self.region_type)
+    }
+}
+
+impl fmt::Display for MemoryMapEntry {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "MemoryMapEntry {{\n\tbase: {:#x}\n\tsize: {:#x}\n\ttype: {:?}\n}}", self.base, self.size, self.get_region_type())
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -31,12 +63,10 @@ pub struct MemoryArea {
 }
 
 impl MemoryArea {
-    pub fn from(memory_map_entry: MemoryMapEntry) -> Self {
-        MemoryArea {
-            base: memory_map_entry.base as usize,
-            size: memory_map_entry.size as usize,
-        }
-    }
+    pub const Empty: MemoryArea = MemoryArea {
+        base: 0,
+        size: 0,
+    };
 
     pub fn new(base: usize, size: usize) -> Self {
         MemoryArea {
@@ -44,91 +74,67 @@ impl MemoryArea {
             size: size,
         }
     }
-}
 
-impl Eq for MemoryArea {
+    pub fn subtract(&self, other: &MemoryArea) -> (Option<MemoryArea>, Option<MemoryArea>) {
+        let mut before = None;
+        let mut after = None;
 
-}
-
-impl Ord for MemoryArea {
-    fn cmp(&self, other: &MemoryArea) -> Ordering {
-        self.base.cmp(&other.base)
-    }
-}
-
-impl PartialOrd for MemoryArea {
-    fn partial_cmp(&self, other: &MemoryArea) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl PartialEq for MemoryArea {
-    fn eq(&self, other: &MemoryArea) -> bool {
-        self.base == other.base
-    }
-}
-
-#[derive(Debug)]
-pub struct MemoryAreas(pub Vec<MemoryArea>);
-
-impl MemoryAreas {
-    pub fn new() -> Self {
-        MemoryAreas(Vec::new())
-    }
-
-    pub fn insert(&mut self, memory_area: MemoryArea) {
-        match self.0.binary_search(&memory_area) {
-            Ok(_) => {} // element already in vector @ `pos` 
-            Err(pos) => self.0.insert(pos, memory_area),
-        }  
-    }
-
-    pub fn get_last_address(&self) -> u32 {
-        let mut max = 0;
-        for area in self.0.iter() {
-            let curr = area.base+area.size;
-            if curr > max {
-                max = curr;
-            }
+        if self.base < other.base {
+            use core::cmp::min;
+            before = Some(MemoryArea::new(self.base, min(other.base - self.base, self.size)));
         }
-        return max as u32;
+
+        let other_end = other.base + other.size;
+        let end = self.base + self.size;
+        if end > other_end {
+            use core::cmp::max;
+            after = Some(MemoryArea::new(max(other_end, self.base), end - other_end));
+        }
+
+        return (before, after)
     }
 }
 
-pub(in super) struct MemoryMapIterator {
-    region_type: MemoryAreaType,
-    memory_map: &'static [MemoryMapEntry],
-    i: usize,
+impl fmt::Display for MemoryArea {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "MemoryArea {{\n\tbase: {:#x}\n\tsize: {:#x}\n}}", self.base, self.size)
+    }
+}
+
+impl From<MemoryMapEntry> for MemoryArea {
+    fn from(memory_map_entry: MemoryMapEntry) -> Self {
+        MemoryArea {
+            base: memory_map_entry.base as usize,
+            size: memory_map_entry.size as usize,
+        }
+    }
+}
+
+pub struct MemoryMap<'a> {
+    pub memory_map: &'a [MemoryMapEntry],
 }
 
 // An iterator that returns only memory map entries with the given type
-impl MemoryMapIterator {
-    pub fn new(bootloader_info: &BootloaderInfo, _type: MemoryAreaType) -> MemoryMapIterator {
+impl<'a> MemoryMap<'a> {
+    pub fn new(bootloader_info: &BootloaderInfo) -> Self {
         let ptr = bootloader_info.memory_map_addr as *const MemoryMapEntry;
         let size = bootloader_info.memory_map_count as usize;
         unsafe {
             // Create slice from ptr(0x500, start of memory map) and size
             let slice = slice::from_raw_parts(ptr, size);
-            MemoryMapIterator {
-                region_type: _type,
+            MemoryMap {
                 memory_map: slice,
-                i: 0,
             }
         }
     }
-}
 
-impl Iterator for MemoryMapIterator {
-    type Item = MemoryArea;    
-
-    fn next(&mut self) -> Option<Self::Item> {
-        while self.i < self.memory_map.len() {
-            let entry = self.memory_map[self.i];
-            self.i += 1;
-            if entry.region_type == self.region_type as u32 || self.region_type == MemoryAreaType::All {
-                return Some(MemoryArea::from(entry));
+    pub fn amount_of_free_areas(&self) -> usize {
+        let mut count = 0;
+        for area in self.memory_map.iter() {
+            if area.get_region_type() as u32 == MemoryAreaType::Free as u32 {
+                count += 1;
             }
         }
-        None
+        return count;
     }
 }

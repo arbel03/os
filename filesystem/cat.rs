@@ -23,7 +23,7 @@ pub fn start(argc: isize, args: *const *const u8) -> isize {
     if fd != 0xffffffff {
         let mut vector = vec![0u8;512];
         std::syscalls::read(fd, &mut vector);
-        print!("{}", unsafe { str::from_utf8_unchecked(&vector) });
+        println!("{}", unsafe { str::from_utf8_unchecked(&vector) });
     } else {
         println!("Error opening file.");
     }

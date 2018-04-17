@@ -2,18 +2,19 @@ pub mod process;
 mod loader;
 mod elf;
 
-use BitmapAllocator;
 use self::process::*;
+use BitmapAllocator;
 use alloc::boxed::Box;
+use alloc::Vec;
+use memory::MemoryArea;
 
 static mut PROCESS_ALLOCATOR: BitmapAllocator = BitmapAllocator::new(0x0, 0x0, 0x0);
 pub static mut CURRENT_PROCESS: Option<Box<Process>> = None;
 
-pub fn init(free_memory_areas: ::memory::MemoryAreas) {
-    println!("{:?}", free_memory_areas);
+pub fn init(free_memory_areas: Vec<MemoryArea>) {
     // Set up an allocator for the process area
-    if free_memory_areas.0.len() > 0 {
-        let process_area = free_memory_areas.0[0];
+    if free_memory_areas.len() > 0 {
+        let process_area = free_memory_areas[0];
         println!("Allocating processes from {:#x} to {:#x}.", process_area.base, process_area.base+process_area.size);
         unsafe {
             PROCESS_ALLOCATOR.set_bitmap_start(process_area.base);
@@ -26,22 +27,19 @@ pub fn init(free_memory_areas: ::memory::MemoryAreas) {
     }
 }
 
-pub unsafe fn execv(file_name: &str) {
+pub unsafe fn execv(file_name: &str, args: &[&str]) {
     use memory::segmentation::{ SegmentSelector, TableType };
     use memory::gdt::{ Gdt, DescriptorType };
     use memory::GDT;
 
     let (elf_header, loaded_segments) = loader::load_elf(file_name);
 
-    // If only 3 segments, one is stack and the other is a null segment.
-    // Every task should have one code segment.
+    // Every task should have one code segment and one data segment.
     if loaded_segments.len() < 2 {
         panic!("Must have atleast one code segment and one data segment.");
     }
 
     let mut boxed_process = Box::new(Process::new());
-
-    println!("{:?}", loaded_segments);
 
     let (code_selector, data_selector, stack_pointer) = {
         let process = boxed_process.as_mut();
@@ -49,6 +47,8 @@ pub unsafe fn execv(file_name: &str) {
         let code_selector = SegmentSelector::new(0, TableType::LDT, 3);
         let data_selector = SegmentSelector::new(1, TableType::LDT, 3);
         let stack_pointer = loaded_segments[1].limit;
+
+        // TODO: Push args
 
         // Set process information
         process.setup_process(GDT.get_selector(DescriptorType::KernelData, 0), 0x9fc00, elf_header.entry_point, stack_pointer, code_selector, data_selector);
@@ -68,7 +68,7 @@ pub unsafe fn execv(file_name: &str) {
         (code_selector, data_selector, stack_pointer)
     };
 
-    println!("\nCODE: {:#x}\nDATA: {:#x}\nESP: {:#x}\nENTRY: {:#x}\n", code_selector, data_selector, stack_pointer, elf_header.entry_point);
+    // println!("\nCODE: {:#x}\nDATA: {:#x}\nESP: {:#x}\nENTRY: {:#x}\n", code_selector, data_selector, stack_pointer, elf_header.entry_point);
 
     CURRENT_PROCESS = Some(boxed_process);
 

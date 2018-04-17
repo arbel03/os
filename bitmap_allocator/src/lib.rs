@@ -1,9 +1,10 @@
+#![feature(allocator_api)]
 #![feature(const_fn)]
-#![feature(alloc, allocator_api)]
+#![feature(alloc)]
 #![no_std]
 
 #[cfg(test)]
-#[macro_use] // for print
+#[macro_use]
 extern crate std;
 extern crate alloc;
 
