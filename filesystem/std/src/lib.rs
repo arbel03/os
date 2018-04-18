@@ -7,9 +7,10 @@
 extern crate rlibc;
 extern crate bitmap_allocator;
 
-mod syscall;
-pub mod fs;
+#[macro_use]
 pub mod io;
+pub mod args;
+pub mod syscalls;
  
 // Setting up heap
 use bitmap_allocator::BitmapAllocator;
@@ -21,39 +22,22 @@ static mut HEAP_AREA: [u8;HEAP_SIZE] = [0u8;HEAP_SIZE];
 static mut HEAP: BitmapAllocator = BitmapAllocator::new(0, HEAP_SIZE, ::core::mem::size_of::<usize>());
 
 #[no_mangle]
-pub unsafe fn _start() {
+#[start]
+pub unsafe extern "C" fn _start(argc: isize, argv: *const *const u8) -> isize {
     HEAP.set_bitmap_start(&HEAP_AREA as *const u8 as usize);
     HEAP.init();
 
     extern "Rust" {
-        fn main(argc: usize, args: *const str);
+        fn main(argc: usize, args: *const *const u8);
     }
-    main(0, "bin/elffile");
+
+    main(argc as usize, argv);
     exit();
-}
-
-pub unsafe fn print_heap_state() {
-    use bitmap_allocator::CellState;
-    for i in 0..HEAP.get_block_count() {
-        let cell = HEAP.get_cell(i);
-        let desc = match *cell {
-            CellState::Free => "_",
-            CellState::Allocated => "-",
-            CellState::Boundary => "<",
-        };
-        io::printf(desc);
-    }
-    io::printf("\n");
-}
-
-#[start]
-#[no_mangle]
-pub unsafe fn start(_argc: isize, _args: *const *const u8) -> isize {
     0
 }
 
 pub fn exit() {
-    io::printf("Process quit.\n");
+    print!("Process quit.\n");
     loop {};
 }
 

@@ -1,3 +1,6 @@
+use alloc::Vec;
+use alloc::String;
+
 // ELF-32 bit implementation
 
 #[derive(Default, Debug)]
@@ -44,6 +47,14 @@ pub enum EntryType {
     Unknown,
     PtLoHiproc(u32),
     PtLoHios(u32),
+}
+
+#[repr(u32)]
+#[allow(dead_code)]
+pub enum Flags {
+    Executable = 0x1,
+    Writeable = 0x2,
+    Readable = 0x4,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -93,5 +104,56 @@ impl ProgramHeaderEntry {
             flags: 0,
             align: 0,
         }
+    }
+}
+
+pub struct ElfFile {
+    file_name: String,
+    file_descriptor: usize,
+    elf_header: ElfHeader,
+    program_header_entries: Vec<ProgramHeaderEntry>,
+}
+
+impl ElfFile {
+    pub fn new(file_name: &str, file_descriptor: usize, header: ElfHeader, entries: Vec<ProgramHeaderEntry>) -> Self {
+        use alloc::string::ToString;
+        ElfFile {
+            file_name: file_name.to_string(),
+            file_descriptor: file_descriptor,
+            elf_header: header,
+            program_header_entries: entries,
+        }
+    }
+
+    pub fn get_file_descriptor(&self) -> usize {
+        self.file_descriptor
+    }
+
+    pub fn get_program_header_entries(&self) -> &Vec<ProgramHeaderEntry> {
+        &self.program_header_entries
+    }
+
+    pub unsafe fn read_elf_header(fd: usize) -> ElfHeader {
+        use syscall::fs::{ read, seek };
+        use core::slice::from_raw_parts_mut;
+
+        let mut header = ElfHeader::default();
+        let read_buff = from_raw_parts_mut(&mut header as *mut ElfHeader as *mut u8, 52);
+        seek(fd, 0);
+        read(fd, read_buff);
+        return header;
+    }
+
+    pub unsafe fn read_program_header_entries(file_descriptor: usize, header: &ElfHeader) -> Vec<ProgramHeaderEntry> {
+        use syscall::fs::{ read, seek };
+        use core::slice::from_raw_parts_mut;
+
+        let ph_entries = vec![ProgramHeaderEntry::empty(); header.phnum as usize];
+        seek(file_descriptor, header.phoff as usize);
+        
+        let buff_slice = from_raw_parts_mut(ph_entries.as_ptr() as *mut u8, (header.phentsize*header.phnum) as usize);
+        read(file_descriptor, buff_slice);
+
+        return ph_entries;
     }
 }

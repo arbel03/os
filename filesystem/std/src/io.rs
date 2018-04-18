@@ -1,7 +1,26 @@
-pub fn printf(string: &str) -> usize {
-    use syscall::syscall2;
-    // SYSCALL(SYS_FOPEN, ptr, size)
-    unsafe {
-        syscall2(0x2, string.as_ptr() as usize, string.len())
+use core::fmt;
+
+pub struct Terminal;
+
+impl fmt::Write for Terminal {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        super::syscalls::printf(s);
+        Ok(())
     }
+}
+
+#[macro_export]
+macro_rules! println {
+    ($fmt:expr) => (print!(concat!($fmt, "\n")));
+    ($fmt:expr, $($arg:tt)*) => (print!(concat!($fmt, "\n"), $($arg)*));
+}
+
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ({
+        use core::fmt::Write;
+        use io::Terminal;
+        let mut writer = Terminal;
+        writer.write_fmt(format_args!($($arg)*)).unwrap();
+    });
 }

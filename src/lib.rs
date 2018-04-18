@@ -44,7 +44,7 @@ pub struct BootloaderInfo {
 }
 
 #[global_allocator]
-static HEAP: Heap = Heap::new(BitmapAllocator::new(0x0, 0x9fc00, core::mem::size_of::<usize>()*4));
+static HEAP: Heap = Heap::new(BitmapAllocator::new(0, 0, 0));
 
 #[no_mangle]
 pub extern fn kmain(bootloader_info: &BootloaderInfo) {
@@ -65,7 +65,7 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     interrupts::enable();
 
     unsafe {
-        task::execv("bin/cat");
+        task::execv("bin/cat", &["files/elffile"]);
     }
     
     loop {};

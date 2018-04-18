@@ -1,9 +1,10 @@
+#![feature(allocator_api)]
 #![feature(const_fn)]
-#![feature(alloc, allocator_api)]
+#![feature(alloc)]
 #![no_std]
 
 #[cfg(test)]
-#[macro_use] // for print
+#[macro_use]
 extern crate std;
 extern crate alloc;
 
@@ -33,6 +34,10 @@ impl BitmapAllocator {
 
     pub fn set_bitmap_start(&mut self, bitmap_start: usize) {
         self.bitmap_start = bitmap_start;
+    }
+
+    pub fn set_block_size(&mut self, block_size: usize) {
+        self.block_size = block_size;
     }
 
     pub fn set_size(&mut self, size: usize) {

@@ -1,6 +1,9 @@
 use memory::gdt::SegmentDescriptorTable;
 use memory::segmentation::{ SegmentDescriptor };
 use alloc::vec::Vec;
+use alloc::string::String;
+use super::elf::*;
+use super::loader::LoadInformation;
 
 #[repr(packed)]
 #[derive(Debug)]
@@ -68,18 +71,19 @@ impl TaskStateSegment {
     }
 }
 
-// TODO: Add TSS
 pub struct Process {
-    address_space: Vec<SegmentDescriptor>,
+    pub executable_file: ElfFile,
+    load_information: Option<LoadInformation>,
     ldt: SegmentDescriptorTable,
     tss: TaskStateSegment,
 }
 
 impl Process {
-    pub fn new() -> Self {
+    pub fn new(executable_file: ElfFile) -> Self {
         Process {
+            executable_file: executable_file,
+            load_information: None,
             ldt: SegmentDescriptorTable::new(),
-            address_space: Vec::new(),
             tss: TaskStateSegment::empty(),
         }
     }
@@ -92,17 +96,16 @@ impl Process {
         &mut self.tss
     }
 
-    pub fn set_ldt_descriptors(&mut self, descriptors: Vec<SegmentDescriptor>) {
-        self.address_space = descriptors;
-        self.ldt.set_descriptors(&self.address_space);
+    pub fn translate_virtual_to_physical_address(&self, address: *const u8) -> *const u8 {
+        self.load_information.as_ref().unwrap().translate_virtual_to_physical_address(address)
     }
 
-    pub fn translate_to_physical_address(&self, virtual_address: u32) -> u32 {
-        if virtual_address < self.address_space[0].limit {
-            return self.address_space[0].base + virtual_address;
-        } else {
-            return self.address_space[1].base + virtual_address;
-        }
+    pub fn translate_physical_to_virtual_address(&self, address: *const u8) -> *const u8 {
+        self.load_information.as_ref().unwrap().translate_physical_to_virtual_address(address)
+    }
+
+    pub fn set_ldt_descriptors(&mut self, descriptors: Vec<SegmentDescriptor>) {
+        self.ldt.set_descriptors(&descriptors);
     }
 
     pub fn setup_process(&mut self, ss0: u16, esp0: u32, entry_point: u32, esp: u32, code_selector: u16, data_selector: u16) {

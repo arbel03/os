@@ -23,18 +23,17 @@ pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize
     let current_process = CURRENT_PROCESS.as_ref().unwrap();
     match a {
         SYS_FOPEN => {         
-            let ptr = current_process.translate_to_physical_address(b as u32);
+            let ptr = current_process.translate_virtual_to_physical_address(b as *const u8);
             open(to_str(ptr as usize, c)) 
         },
         SYS_PRINT => {
-            let ptr = current_process.translate_to_physical_address(b as u32);
+            let ptr = current_process.translate_virtual_to_physical_address(b as *const u8);
             let string = to_str(ptr as usize, c);
-            // print!("{:#x} -> {:?} ", b, string.as_ptr());
             print!("{}", string);
             0
         },
         SYS_READ => {
-            let ptr = current_process.translate_to_physical_address(c as u32);
+            let ptr = current_process.translate_virtual_to_physical_address(c as *const u8);
             let slice = slice::from_raw_parts_mut(ptr as *mut u8, d);
             read(b, slice)
         },
