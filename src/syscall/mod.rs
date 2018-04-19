@@ -8,7 +8,10 @@ use super::task::CURRENT_PROCESS;
 pub fn to_str<'a>(ptr: usize, size: usize) -> &'a str {
     unsafe {
         let slice = slice::from_raw_parts(ptr as *const u8, size);
-        str::from_utf8(slice).unwrap()
+        if let Ok(string) = str::from_utf8(slice) {
+            return string;
+        }
+        return "Invalid String.";
     }
 }
 

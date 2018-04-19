@@ -18,3 +18,10 @@ pub(in super) extern "C" fn double_fault(stack_frame: &ExceptionStackFrame, erro
     println!("{}", stack_frame);
     loop {};
 }
+
+pub(in super) extern "C" fn invalid_tss(stack_frame: &ExceptionStackFrame, error_code: u32) {
+    println!("Exception! Invalid TSS.");
+    println!("Error Code: {:b}", error_code);
+    println!("{}", stack_frame);
+    loop {};
+}

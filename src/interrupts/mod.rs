@@ -113,9 +113,10 @@ macro_rules! define_interrupt_with_error_code {
 pub fn init() {
     unsafe {
         // Exceptions
-        IDT.exceptions.double_fault =  define_interrupt_with_error_code!(double_fault, 0);
+        IDT.exceptions.double_fault = define_interrupt_with_error_code!(double_fault, 0);
         IDT.exceptions.general_protection_fault = define_interrupt_with_error_code!(general_protection_fault, 0);
-        IDT.exceptions.invalid_opcode = define_interrupt!(invalid_opcode ,0);
+        IDT.exceptions.invalid_opcode = define_interrupt!(invalid_opcode, 0);
+        IDT.exceptions.invalid_tss = define_interrupt_with_error_code!(invalid_tss, 0);
 
         // Hardware interrupts       
         IDT.set_hardware_interrupt(1, define_interrupt!(keyboard_irq, 0));              

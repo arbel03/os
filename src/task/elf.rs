@@ -3,7 +3,7 @@ use alloc::String;
 
 // ELF-32 bit implementation
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 #[repr(packed)]
 pub struct ElfHeader {
     magic: [u8; 4],
@@ -107,6 +107,7 @@ impl ProgramHeaderEntry {
     }
 }
 
+#[derive(Debug)]
 pub struct ElfFile {
     file_name: String,
     file_descriptor: usize,
@@ -131,6 +132,10 @@ impl ElfFile {
 
     pub fn get_program_header_entries(&self) -> &Vec<ProgramHeaderEntry> {
         &self.program_header_entries
+    }
+
+    pub fn get_elf_header(&self) -> ElfHeader {
+        self.elf_header.clone()
     }
 
     pub unsafe fn read_elf_header(fd: usize) -> ElfHeader {
