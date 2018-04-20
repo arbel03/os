@@ -111,7 +111,7 @@ impl ProgramHeaderEntry {
 pub struct ElfFile {
     file_name: String,
     file_descriptor: usize,
-    elf_header: ElfHeader,
+    pub elf_header: ElfHeader,
     program_header_entries: Vec<ProgramHeaderEntry>,
 }
 
@@ -132,10 +132,6 @@ impl ElfFile {
 
     pub fn get_program_header_entries(&self) -> &Vec<ProgramHeaderEntry> {
         &self.program_header_entries
-    }
-
-    pub fn get_elf_header(&self) -> ElfHeader {
-        self.elf_header.clone()
     }
 
     pub unsafe fn read_elf_header(fd: usize) -> ElfHeader {

@@ -21,7 +21,6 @@ pub fn main(argc: usize, argv: *const *const u8) {
     // println!("argc: {}", argc);
     // println!("argv: {:?}", argv);
     println!("Filename: {}", file_name);
-    loop {};
     let fd = std::syscalls::open(file_name);
     if fd != 0xffffffff {
         let file_size = std::syscalls::filesz(fd);

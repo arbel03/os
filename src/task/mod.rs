@@ -31,8 +31,13 @@ pub unsafe fn execv(file_name: &str, args: &[&str]) {
     use memory::segmentation::{ SegmentSelector, TableType };
     use memory::gdt::{ Gdt, DescriptorType };
     use memory::GDT;
-    
+    use core::ops::Deref;
+    use core::ops::DerefMut;
+
     let mut process = loader::create_process(file_name).expect("An error occured.");
+
+    CURRENT_PROCESS = Some(Box::new(process));
+    let mut process = CURRENT_PROCESS.as_mut().unwrap().deref_mut();
 
     let load_request = loader::create_load_request(&process, args);
     let load_information = match loader::load_process(&process, args, load_request) {
@@ -53,23 +58,18 @@ pub unsafe fn execv(file_name: &str, args: &[&str]) {
     "r"(args.len())
     :: "intel");
 
-    let elf_header = process.get_elf_header();
     // Set process information
     process.setup_process(GDT.get_selector(DescriptorType::KernelData, 0), 0x9fc00);
     // Set LDT in GDT
     process.set_ldt_descriptors(load_information.get_ldt_entries());
     GDT.set_ldt(process.get_ldt());
     // Set TSS
-    process.get_tss().iopb_offset = 104;
     GDT.set_tss(process.get_tss());
 
     asm!("lldt $0" :: "r"(GDT.get_selector(DescriptorType::LdtDescriptor, 0) as u16) :: "intel");
     asm!("ltr $0" :: "r"(GDT.get_selector(DescriptorType::TssDescriptor, 0) as u16) :: "intel");
 
-    println!("{:?}", load_information);
     process.set_load_information(load_information);
-
-    CURRENT_PROCESS = Some(Box::new(process));
 
     // Perform context switch to loaded task.
     asm!("
@@ -88,6 +88,6 @@ pub unsafe fn execv(file_name: &str, args: &[&str]) {
     "r"(data_selector as u32),
     "r"(stack_pointer as u32 - 4),
     "r"(code_selector as u32)
-    "r"(elf_header.entry_point as u32)
+    "r"(process.get_elf_header().entry_point as u32)
     :: "intel", "volatile");
 }

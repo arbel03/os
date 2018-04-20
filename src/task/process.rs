@@ -88,41 +88,33 @@ impl Process {
         }
     }
 
-    pub fn get_load_information(&self) -> &LoadInformation {
-        self.load_information.as_ref().unwrap()
-    }
-
     pub fn set_load_information(&mut self, load_information: LoadInformation) {
         self.load_information = Some(load_information);
     }
 
-    pub fn get_elf_header(&self) -> ElfHeader {
-        self.executable_file.get_elf_header()
+    pub fn get_load_information(&self) -> &LoadInformation {
+        self.load_information.as_ref().unwrap()
     }
 
-    pub fn get_ldt(&self) -> &SegmentDescriptorTable {
-        &self.ldt
-    }
-
-    pub fn get_tss(&mut self) -> &mut TaskStateSegment {
-        &mut self.tss
-    }
-
-    pub fn translate_virtual_to_physical_address(&self, address: *const u8) -> *const u8 {
-        self.load_information.as_ref().unwrap().translate_virtual_to_physical_address(address)
-    }
-
-    pub fn translate_physical_to_virtual_address(&self, address: *const u8) -> *const u8 {
-        self.load_information.as_ref().unwrap().translate_physical_to_virtual_address(address)
+    pub fn get_elf_header(&mut self) -> &ElfHeader {
+        &self.executable_file.elf_header
     }
 
     pub fn set_ldt_descriptors(&mut self, descriptors: &Vec<SegmentDescriptor>) {
         self.ldt.set_descriptors(descriptors);
     }
 
+    pub fn get_ldt(&self) -> &SegmentDescriptorTable {
+        &self.ldt
+    }
+
     pub fn setup_process(&mut self, ss0: u16, esp0: u32) {
         self.tss.ss0 = ss0 as u32;
         self.tss.esp0 = esp0;
         self.tss.iopb_offset = 104;
+    }
+
+    pub fn get_tss(&mut self) -> &TaskStateSegment {
+        &mut self.tss
     }
 }
