@@ -82,6 +82,8 @@ impl Disk for Ata {
         // let new_len = buffer.len() * size_of::<T>() / size_of::<u8>();
         // let buffer = slice::from_raw_parts_mut(buffer.as_ptr() as *mut u8, new_len);
 
+        ::interrupts::disable();
+
         if buffer.len() % 512 != 0 {
             return Err("Size of buffer, isnt a multiplication of sector size.");
         } else if buffer.len() / 512 > 127 {
@@ -126,6 +128,9 @@ impl Disk for Ata {
                 self.read_register(RegisterType::Status);
             }
         }
+
+        ::interrupts::enable();
+
         // Return the amount of sectors read.
         Ok(sector_count)
     }

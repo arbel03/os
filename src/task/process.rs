@@ -123,5 +123,6 @@ impl Process {
     pub fn setup_process(&mut self, ss0: u16, esp0: u32) {
         self.tss.ss0 = ss0 as u32;
         self.tss.esp0 = esp0;
+        self.tss.iopb_offset = 104;
     }
 }

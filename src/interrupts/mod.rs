@@ -16,11 +16,19 @@ macro_rules! save_registers {
         push edx
         push esi
         push edi
+        push ebp
 
         push ds
         push gs
         push fs
-        push es" :::: "intel", "volatile");
+        push es
+        
+        mov bx, 0x10
+        mov ds, bx
+        mov fs, bx
+        mov es, bx
+        mov gs, bx
+        " :::: "intel", "volatile");
     }};
 }
 
@@ -32,6 +40,7 @@ macro_rules! restore_registers {
         pop gs
         pop ds
 
+        pop ebp
         pop edi
         pop esi
         pop edx
@@ -49,19 +58,12 @@ macro_rules! define_interrupt {
             unsafe {
                 save_registers!();
                 asm!("
-                mov bx, 0x10
-                mov ds, bx
-                mov fs, bx
-                mov es, bx
-                mov gs, bx
-
                 mov ebx, $0
 
                 mov eax, esp
-                add eax, 6*4
-                add eax, 3*4
+                add eax, 10*4
                 push eax
-                
+
                 call ebx
                 add esp, 4
                 " :: "r"($b as extern "C" fn(&idt::ExceptionStackFrame) as usize) :: "intel", "volatile");
@@ -81,16 +83,10 @@ macro_rules! define_interrupt_with_error_code {
             unsafe {
                 save_registers!();
                 asm!("
-                mov bx, 0x10
-                mov ds, bx
-                mov fs, bx
-                mov es, bx
-                mov gs, bx
-
                 mov ebx, $0
 
                 mov eax, esp
-                add eax, 9*4
+                add eax, 10*4
 
                 mov ecx, [eax]
                 add eax, 4
@@ -151,7 +147,7 @@ extern "C" fn primary_ata_controller(_stack_frame: &idt::ExceptionStackFrame) {
 }
 
 extern "C" fn keyboard_irq(_stack_frame: &idt::ExceptionStackFrame) {
-    // println!("{}", _stack_frame);
+    // loop {};
     if let Some(c) = drivers::keyboard::getc() {
         print!("{}", c);
     }

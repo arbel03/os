@@ -54,7 +54,7 @@ pub(in super) unsafe fn load_process(process: &Process, args: &[&str], load_requ
         }
     };
 
-    let process_limit = (process_base as usize + process_size_total as usize) as *const u8;
+    let process_limit = (process_base as usize + process_size_total as usize) as u32;
     let mut ldt_entries: Vec<SegmentDescriptor> = Vec::new();
     let file_descriptor = process.executable_file.get_file_descriptor();
     for segment in process.executable_file.get_program_header_entries() {
@@ -63,11 +63,11 @@ pub(in super) unsafe fn load_process(process: &Process, args: &[&str], load_requ
             if segment.flags & Flags::Executable as u32 == Flags::Executable as u32 {
                 println!("Loaded code segment.");
                 // Adding a new user space code descriptor
-                ldt_entries.insert(0, SegmentDescriptor::new(process_base as u32, (process_limit as u32)/0x1000, 0b11111010, 0b1100));    
+                ldt_entries.insert(0, SegmentDescriptor::new(process_base as u32, process_limit/0x1000+1, 0b11111010, 0b1100));    
             } else {
                 println!("Loaded data segment.");
                 // Adding a new user space data descriptor
-                ldt_entries.push(SegmentDescriptor::new(process_base as u32, (process_limit as u32)/0x1000, 0b11110010, 0b1100));
+                ldt_entries.push(SegmentDescriptor::new(process_base as u32, process_limit/0x1000+1, 0b11110010, 0b1100));
             }
 
             let slice = slice::from_raw_parts_mut((segment.vaddr as usize + process_base as usize) as *mut u8, segment.file_size as usize);
@@ -77,18 +77,22 @@ pub(in super) unsafe fn load_process(process: &Process, args: &[&str], load_requ
     }
 
     // Copying arguments to the process's address space.
-    let arguments_start = load_request.get_arguments_start(process_base);
-    let pointers_start = load_request.get_pointer_array_start(process_base);
-    let pointers_slice = slice::from_raw_parts_mut(pointers_start, load_request.get_argument_count());
+    let arguments_start = load_request.get_arguments_start();
+    let pointers_start = load_request.get_pointer_array_start();
+
+    let arguments_start_physical = process_base.offset(arguments_start as isize);
+    let pointers_start_physical = process_base.offset(pointers_start as isize) as *mut *const u8;
+
+    let pointers_slice = slice::from_raw_parts_mut(pointers_start_physical, load_request.get_argument_count());
     let mut arg_offset: usize = 0;
     for (index, arg) in args.iter().enumerate() {
-        let arg_slice = slice::from_raw_parts_mut(arguments_start.offset(arg_offset as isize), arg.len());
+        let arg_slice = slice::from_raw_parts_mut(arguments_start_physical.offset(arg_offset as isize), arg.len());
         arg_slice.clone_from_slice(arg.as_bytes());
-        pointers_slice[index] = (arg_slice.as_ptr() as usize - process_base as usize) as *const u8;
+        pointers_slice[index] = arguments_start.offset(arg_offset as isize);
         arg_offset += arg.len() + 1;
     }
 
-    let stack_pointer = load_request.get_stack_pointer(process_base);
+    let stack_pointer = load_request.get_stack_pointer();
 
     Ok(LoadInformation {
         process_base: process_base as *const u8,
@@ -113,16 +117,16 @@ impl LoadRequest {
         self.process_area_size + self.stack_area_size + self.arguments_area_size + self.arguments_count * mem::size_of::<*const u8>()
     }
 
-    pub fn get_arguments_start(&self, process_base: *const u8) -> *mut u8 {
-        return (self.process_area_size + self.stack_area_size + process_base as usize) as *mut u8;
+    pub fn get_arguments_start(&self) -> *mut u8 {
+        return (self.process_area_size + self.stack_area_size) as *mut u8;
     }
 
-    pub fn get_pointer_array_start(&self, process_base: *const u8) -> *mut *const u8 {
-        return (self.process_area_size + self.stack_area_size + self.arguments_area_size + process_base as usize) as *mut *const u8;
+    pub fn get_pointer_array_start(&self) -> *mut *const u8 {
+        return (self.process_area_size + self.stack_area_size + self.arguments_area_size) as *mut *const u8;
     }
 
-    pub fn get_stack_pointer(&self, process_base: *mut u8) -> *mut u8 {
-        (self.process_area_size + self.stack_area_size + process_base as usize) as *mut u8
+    pub fn get_stack_pointer(&self) -> *mut u8 {
+        (self.process_area_size + self.stack_area_size) as *mut u8
     }
 
     pub fn get_argument_count(&self) -> usize {

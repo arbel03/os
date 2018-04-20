@@ -44,7 +44,7 @@ impl Gdt for SegmentDescriptorTable {
 
         //let index: DescriptorType = if is_main { MainTssDescriptor } else { SecondaryTssDescriptor };
         let index = DescriptorType::TssDescriptor;
-        self.insert(index as usize, SegmentDescriptor::new(base, limit, 0b10001001, 0b0100));
+        self.insert(index as usize, SegmentDescriptor::new(base, limit, 0b10001001, 0b0000));
     }
 
     fn set_ldt(&mut self, ldt: &SegmentDescriptorTable) {

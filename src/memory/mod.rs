@@ -16,8 +16,8 @@ pub unsafe fn setup_descriptors(_bootloader_info: &BootloaderInfo) {
     GDT.init();
     
     // Dividing limit by 4K since granularity flag is on
-    let flags = Flags::Size as u8 | Flags::Granularity as u8;
-    let limit = 0xffffffff / 0x1000;
+    let flags = Flags::Size as u8; // | Flags::Granularity as u8;
+    let limit = 0x13e9a3;
 
     // Kernel Code Segment
     let access_byte = AccessFlags::PL0 as u8 | AccessFlags::ReadWrite as u8 | AccessFlags::Executable as u8 | AccessFlags::AlwaysOne as u8 | AccessFlags::Present as u8;

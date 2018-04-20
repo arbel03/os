@@ -42,20 +42,17 @@ pub unsafe fn execv(file_name: &str, args: &[&str]) {
 
     let code_selector = SegmentSelector::new(0, TableType::LDT, 3);
     let data_selector = SegmentSelector::new(1, TableType::LDT, 3);
-    let stack_pointer = load_information.stack_pointer as u32;
+    let stack_pointer = (load_information.stack_pointer as usize - 8) as *mut u8;
     asm!("
-    mov eax, esp
-    mov esp, $0
-    push $1
-    push $2
-    mov esp, eax
+    mov ebx, $0
+    mov [ebx], $2
+    mov [ebx+4], $1
     " ::
-    "{ebx}"(stack_pointer as u32),
-    "{ecx}"(load_information.argument_pointers_start as u32 - load_information.process_base as u32),
-    "{edx}"(args.len())
+    "r"(load_information.process_base.offset(stack_pointer as isize) as u32),
+    "r"(load_information.argument_pointers_start),
+    "r"(args.len())
     :: "intel");
 
-    let virtual_stack_pointer = load_information.translate_physical_to_virtual_address((stack_pointer-12) as *const u8);
     let elf_header = process.get_elf_header();
     // Set process information
     process.setup_process(GDT.get_selector(DescriptorType::KernelData, 0), 0x9fc00);
@@ -63,12 +60,13 @@ pub unsafe fn execv(file_name: &str, args: &[&str]) {
     process.set_ldt_descriptors(load_information.get_ldt_entries());
     GDT.set_ldt(process.get_ldt());
     // Set TSS
-    process.get_tss().ldtr = GDT.get_selector(DescriptorType::LdtDescriptor, 0) as u32;
+    process.get_tss().iopb_offset = 104;
     GDT.set_tss(process.get_tss());
 
-    asm!("ltr $0" :: "r"(GDT.get_selector(DescriptorType::TssDescriptor, 0) as u16) :: "intel");
     asm!("lldt $0" :: "r"(GDT.get_selector(DescriptorType::LdtDescriptor, 0) as u16) :: "intel");
+    asm!("ltr $0" :: "r"(GDT.get_selector(DescriptorType::TssDescriptor, 0) as u16) :: "intel");
 
+    println!("{:?}", load_information);
     process.set_load_information(load_information);
 
     CURRENT_PROCESS = Some(Box::new(process));
@@ -88,7 +86,7 @@ pub unsafe fn execv(file_name: &str, args: &[&str]) {
     iretd
     " ::
     "r"(data_selector as u32),
-    "r"(virtual_stack_pointer as u32),
+    "r"(stack_pointer as u32 - 4),
     "r"(code_selector as u32)
     "r"(elf_header.entry_point as u32)
     :: "intel", "volatile");

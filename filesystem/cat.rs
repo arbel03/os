@@ -18,8 +18,9 @@ pub fn main(argc: usize, argv: *const *const u8) {
         std::args::terminated_string(arg_ptr) 
     };
 
-    // print!("Filename: {}", file_name);
-    print!("Hello");
+    // println!("argc: {}", argc);
+    // println!("argv: {:?}", argv);
+    println!("Filename: {}", file_name);
     loop {};
     let fd = std::syscalls::open(file_name);
     if fd != 0xffffffff {
