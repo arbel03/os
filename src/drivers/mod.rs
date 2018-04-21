@@ -10,8 +10,8 @@ pub fn configure() {
     Pic::SLAVE.init(0x28, false);
 
     Pic::MASTER.disable_irq(0); // Disable timer for now
-    Pic::MASTER.enable_irq(1); // Keyboard
-    Pic::MASTER.enable_irq(2); // Slave PIC
+    Pic::MASTER.disable_irq(1); // Keyboard
+    Pic::MASTER.disable_irq(2); // Slave PIC
 }
 
 // PIC end of interrupt function

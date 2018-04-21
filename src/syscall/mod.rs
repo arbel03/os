@@ -19,6 +19,7 @@ const SYS_FOPEN: usize = 0x1;
 const SYS_PRINT: usize = 0x2;
 const SYS_READ: usize = 0x03;
 const SYS_FILESZ: usize = 0x04;
+const IO_GETC: usize = 0x05;
 const UNDEFINED_SYSCALL: usize = 0xff;
 
 #[allow(unused_variables)]
@@ -42,6 +43,9 @@ pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize
             let slice = slice::from_raw_parts_mut(ptr as *mut u8, d);
             read(b, slice)
         },
+        IO_GETC => {
+            ::drivers::keyboard::getc() as usize
+        }
         SYS_FILESZ => {
             file_size(b)
         },

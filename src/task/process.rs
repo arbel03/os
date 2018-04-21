@@ -74,6 +74,7 @@ impl TaskStateSegment {
 pub struct Process {
     pub executable_file: ElfFile,
     load_information: Option<LoadInformation>,
+    input_buffer: String,
     ldt: SegmentDescriptorTable,
     tss: TaskStateSegment,
 }
@@ -83,9 +84,23 @@ impl Process {
         Process {
             executable_file: executable_file,
             load_information: None,
+            input_buffer: String::new(),
             ldt: SegmentDescriptorTable::new(),
             tss: TaskStateSegment::empty(),
         }
+    }
+
+    pub fn insert_input(&mut self, character: char) {
+        use core::fmt::Write;
+        self.input_buffer.write_char(character);
+    }
+
+    pub fn get_input_character(&mut self) -> Option<char> {
+        if let Some(input_character) = self.input_buffer.chars().next() {
+            self.input_buffer.remove(0);
+            return Some(input_character);
+        }
+        return None;
     }
 
     pub fn set_load_information(&mut self, load_information: LoadInformation) {

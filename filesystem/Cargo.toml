@@ -17,5 +17,5 @@ name = "cat"
 path = "cat.rs"
 
 [[bin]]
-name = "ls"
-path = "ls.rs"
+name = "shell"
+path = "shell.rs"

@@ -21,6 +21,12 @@ syscall_handler:
 
     push eax
 
+    mov ax, 0x10
+    mov ds, ax
+    mov fs, ax
+    mov gs, ax
+    mov es, ax
+
     call syscall_handler_inner
     
     add esp, 4

@@ -65,7 +65,7 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     interrupts::enable();
 
     unsafe {
-        task::execv("bin/cat", &["files/elffile"]);
+        task::execv("bin/shell", &[]);
     }
     
     loop {};

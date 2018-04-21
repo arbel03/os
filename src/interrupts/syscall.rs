@@ -24,14 +24,6 @@ pub struct SyscallStack {
 
 #[no_mangle]
 pub unsafe extern fn syscall_handler_inner(regs: &SyscallStack) {
-    use memory::utils::*;
-    use memory::GDT;
-    use memory::gdt::{ Gdt, DescriptorType };
-    load_ds(GDT.get_selector(DescriptorType::KernelData, 0));
-    load_es(GDT.get_selector(DescriptorType::KernelData, 0));
-    load_fs(GDT.get_selector(DescriptorType::KernelData, 0));
-    load_gs(GDT.get_selector(DescriptorType::KernelData, 0));
-
     let result = syscall::syscall(regs.eax, regs.ebx, regs.ecx, regs.edx, regs.esi, regs.edi);
     asm!("mov eax, $0" :: "m"(result) :: "intel");
 }
