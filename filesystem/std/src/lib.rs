@@ -2,10 +2,12 @@
 #![feature(lang_items)]
 #![feature(asm)]
 #![feature(start)]
+#![feature(alloc)]
 #![no_std]
 
 extern crate rlibc;
 extern crate bitmap_allocator;
+extern crate alloc;
 
 #[macro_use]
 pub mod io;

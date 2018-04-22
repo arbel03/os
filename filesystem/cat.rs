@@ -13,14 +13,15 @@ use std::io;
 #[no_mangle]
 pub fn main(argc: usize, argv: *const *const u8) {
     use core::str;
-    let file_name = unsafe {
-        let arg_ptr: *const u8 = *argv as *const u8;
-        std::args::terminated_string(arg_ptr) 
-    };
 
-    // println!("argc: {}", argc);
-    // println!("argv: {:?}", argv);
-    println!("Filename: {}", file_name);
+    let args = &unsafe { std::args::get_args(argc, argv) };
+    if argc != 2 {
+        let file_name = args[0];
+        println!("Usage:\n{} <file_name>", file_name);
+        return;
+    }
+
+    let file_name = args[1];
     let fd = std::syscalls::open(file_name);
     if fd != 0xffffffff {
         let file_size = std::syscalls::filesz(fd);

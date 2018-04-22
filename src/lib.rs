@@ -64,6 +64,7 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     // Enable hardware interrupts
     interrupts::enable();
 
+    vga_buffer::clear_screen();
     unsafe {
         task::execv("bin/shell", &[]);
     }

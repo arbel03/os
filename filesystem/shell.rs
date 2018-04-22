@@ -11,8 +11,11 @@ extern crate std;
 use std::io;
 
 #[no_mangle]
-pub fn main(argc: isize, args: *const *const u8) {
-    loop { 
-        print!("{}", std::syscalls::getc() as char);
+pub fn main(argc: usize, argv: *const *const u8) {
+    let args = &unsafe { std::args::get_args(argc, argv) };
+    loop {
+        print!("{} $ ", args[0]);
+        let input = io::read_string();
+        println!("{}", input);
     }
 }

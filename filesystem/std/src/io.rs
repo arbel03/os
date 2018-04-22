@@ -1,4 +1,5 @@
 use core::fmt;
+use alloc::String;
 
 pub struct Terminal;
 
@@ -23,4 +24,24 @@ macro_rules! print {
         let mut writer = Terminal;
         writer.write_fmt(format_args!($($arg)*)).unwrap();
     });
+}
+
+pub fn read_string() -> String {
+    use syscalls::getc;
+    use core::fmt::Write;
+
+    let mut input_string = String::new();
+    loop {
+        let character = getc();
+        if character == '7' {
+            continue;
+        }
+        print!("{}", character);
+        if character == '\n' {
+            return input_string;
+        } else {
+            input_string.write_char(character);
+        }
+    }
+    return input_string;
 }

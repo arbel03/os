@@ -39,23 +39,25 @@ pub unsafe fn execv(file_name: &str, args: &[&str]) {
     CURRENT_PROCESS = Some(Box::new(process));
     let mut process = CURRENT_PROCESS.as_mut().unwrap().deref_mut();
 
-    let load_request = loader::create_load_request(&process, args);
-    let load_information = match loader::load_process(&process, args, load_request) {
+    let mut arguments = vec![];
+    arguments.push(file_name);
+    arguments.extend_from_slice(args);
+    let load_request = loader::create_load_request(&process, &arguments);
+    let load_information = match loader::load_process(&process, &arguments, load_request) {
         Ok(load_information) => load_information,
         Err(load_error) => panic!("Load error: {:?}", load_error),
     };
 
     let code_selector = SegmentSelector::new(0, TableType::LDT, 3);
     let data_selector = SegmentSelector::new(1, TableType::LDT, 3);
-    let stack_pointer = (load_information.stack_pointer as usize - 8) as *mut u8;
+    let stack_pointer = (load_information.stack_pointer as usize-8) as *mut u8;
     asm!("
-    mov ebx, $0
-    mov [ebx], $2
-    mov [ebx+4], $1
+    mov [ebx], $1
+    mov [ebx+4], $2
     " ::
-    "r"(load_information.process_base.offset(stack_pointer as isize) as u32),
-    "r"(load_information.argument_pointers_start),
-    "r"(args.len())
+    "{ebx}"(load_information.process_base.offset(stack_pointer as isize) as u32),
+    "r"(load_information.arguments_count),
+    "r"(load_information.argument_pointers_start)
     :: "intel");
 
     // Set process information
