@@ -27,19 +27,26 @@ macro_rules! print {
 }
 
 pub fn read_string() -> String {
-    use syscalls::getc;
+    use syscalls::{ getc,delc };
     use core::fmt::Write;
 
     let mut input_string = String::new();
     loop {
-        let character = getc();
+        let result = getc();
+        let character = result as u8 as char;
         if character == '7' {
             continue;
         }
-        print!("{}", character);
         if character == '\n' {
+            print!("\n");
             return input_string;
+        } else if result == 0xffffffff {
+            if input_string.len() != 0 {
+                delc();
+                input_string.pop();
+            }
         } else {
+            print!("{}", character);
             input_string.write_char(character);
         }
     }

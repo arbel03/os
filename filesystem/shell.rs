@@ -16,6 +16,10 @@ pub fn main(argc: usize, argv: *const *const u8) {
     loop {
         print!("{} $ ", args[0]);
         let input = io::read_string();
-        println!("{}", input);
+        if input == "quit" {
+            break;
+        } else if input == "print heap" {
+            unsafe { std::print_heap(); }
+        }
     }
 }

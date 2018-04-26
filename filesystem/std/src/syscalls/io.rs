@@ -6,10 +6,18 @@ pub fn printf(string: &str) -> usize {
     }
 }
 
-pub fn getc() -> char {
+pub fn getc() -> usize {
     use syscalls::syscall::syscall0;
     // SYSCALL(IO_GETC)
     unsafe {
-        syscall0(0x5) as u8 as char
+        syscall0(0x5)
+    }
+}
+
+pub fn delc() {
+    use syscalls::syscall::syscall0;
+    // SYSCALL(IO_DELC)
+    unsafe {
+        syscall0(0x6);
     }
 }

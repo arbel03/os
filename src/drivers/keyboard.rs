@@ -16,6 +16,12 @@ pub struct ScanCode {
     pub scan_code_type: ScanCodeType,
 }
 
+#[derive(PartialEq)]
+pub enum ScanCodeError {
+    BackspaceScancode,
+    InvalidScancode,
+}
+
 impl ScanCode {
     pub fn new(scan_code_type: ScanCodeType) -> Self {
         ScanCode {
@@ -31,7 +37,7 @@ impl ScanCode {
         }
     }
 
-    pub fn get_char(&self) -> Option<char> {
+    pub fn get_char(&self) -> Result<char, ScanCodeError> {
         let c = match self.scan_code_type {
             ScanCodeType::Digit(digit) => ('0' as u8 + digit) as char,
             ScanCodeType::Character(character) => {
@@ -42,9 +48,10 @@ impl ScanCode {
             ScanCodeType::Enter => '\n',
             ScanCodeType::Quote => if unsafe { IS_UPPERCASE } { '\"' } else { '\'' },
             ScanCodeType::Space => ' ',
-            _ => return None,
+            ScanCodeType::Backspace => return Err(ScanCodeError::BackspaceScancode),
+            _ => return Err(ScanCodeError::InvalidScancode),
         };
-        Some(c)
+        Ok(c)
     }
 }
 
@@ -53,8 +60,8 @@ use core::fmt::Write;
 use alloc::string::ToString;
 impl fmt::Display for ScanCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(ch) = self.get_char() {
-            f.write_char(ch)
+        if let Ok(ch) = self.get_char() {
+            f.write_char(ch as char)
         } else {
             Ok(())
         }
@@ -133,7 +140,7 @@ pub fn read_scancode_value() -> u8 {
     }
 }
 
-pub fn getc() -> char {
+pub fn getc() -> usize {
     // set_uppercased(false);
     loop {
         if let Some(c) = get_scancode() {
@@ -141,11 +148,15 @@ pub fn getc() -> char {
             if ScanCodeType::Shift == c.scan_code_type {
                 set_uppercased(!c.released);
             } else {
-                if let Some(character) = c.get_char() {
-                    return character;
+                match c.get_char() {
+                    Ok(character) => return character as usize,
+                    Err(scan_code_error) => {
+                        if scan_code_error == ScanCodeError::BackspaceScancode {
+                            return 0xffffffff;
+                        }
+                    }
                 }
             }
         }
     }
-    ' '
 }

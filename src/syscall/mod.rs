@@ -20,6 +20,7 @@ const SYS_PRINT: usize = 0x2;
 const SYS_READ: usize = 0x03;
 const SYS_FILESZ: usize = 0x04;
 const IO_GETC: usize = 0x05;
+const IO_DELC: usize = 0x06;
 const UNDEFINED_SYSCALL: usize = 0xff;
 
 #[allow(unused_variables)]
@@ -45,7 +46,11 @@ pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize
         },
         IO_GETC => {
             ::drivers::keyboard::getc() as usize
-        }
+        },
+        IO_DELC => {
+            ::vga_buffer::WRITER.delete_char();
+            0
+        },
         SYS_FILESZ => {
             file_size(b)
         },

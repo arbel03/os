@@ -1,6 +1,4 @@
-use core::ptr::Unique;
 use core::fmt;
-use spin::Mutex;
 
 #[allow(dead_code)]
 #[repr(u8)]
@@ -48,21 +46,26 @@ struct Buffer {
 
 pub struct Writer {
     column_position: usize,
+    row_position: usize,
     color_code: ColorCode,
-    buffer: Unique<Buffer>,
 }
 
 impl Writer {
     pub fn write_byte(&mut self, byte: u8) {
+        use core::fmt::Write;
         match byte {
-            b'\t' => for _ in 0..4 { self.write_byte(' ' as u8) },
-            b'\n' => self.new_line(),
+            b'\t' => {
+                self.write_str("    ");
+            },
+            b'\n' => {
+                self.new_line();   
+                
+            },
             byte => {
                 if self.column_position >= BUFFER_WIDTH {
-                    self.new_line();
+                    self.new_line();   
                 }
-
-                let row = BUFFER_HEIGHT - 1;
+                let row = self.row_position;
                 let col = self.column_position;
 
                 let color_code = self.color_code;
@@ -76,18 +79,23 @@ impl Writer {
     }
 
     fn buffer(&mut self) -> &mut Buffer {
-        unsafe{ self.buffer.as_mut() }
+        unsafe { &mut *(0xb8000 as *mut Buffer) }
     }
 
     fn new_line(&mut self) {
-        for row in 1..BUFFER_HEIGHT {
-            for col in 0..BUFFER_WIDTH {
-                let buffer = self.buffer();
-                let character = buffer.chars[row][col];
-                buffer.chars[row-1][col] = character;
+        if self.row_position == BUFFER_HEIGHT-1 {
+            for row in 1..BUFFER_HEIGHT {
+                for col in 0..BUFFER_WIDTH {
+                    let buffer = self.buffer();
+                    let character = buffer.chars[row][col];
+                    buffer.chars[row-1][col] = character;
+                }
             }
+            self.clear_row(BUFFER_HEIGHT-1);
         }
-        self.clear_row(BUFFER_HEIGHT-1);
+
+        use core::cmp::min;
+        self.row_position = min(self.row_position+1, BUFFER_HEIGHT-1);
         self.column_position = 0;
     }
 
@@ -100,6 +108,27 @@ impl Writer {
             self.buffer().chars[row][col] = blank;
         }
     }
+
+    pub fn delete_char(&mut self) {
+        let blank = ScreenChar {
+            ascii_character: b' ',
+            color_code: self.color_code,
+        };
+        let mut col = self.column_position;
+        let mut row = self.row_position;
+        if row == 0 && col == 0 {
+            return;
+        }
+        if col == 0 {
+            row -= 1;
+            col = BUFFER_WIDTH-1;
+        } else {
+            col -= 1;
+        }
+        self.column_position = col;
+        self.row_position = row;
+        self.buffer().chars[row][col] = blank;
+    }
 }
 
 impl fmt::Write for Writer {
@@ -111,11 +140,11 @@ impl fmt::Write for Writer {
     }
 }
 
-pub static WRITER: Mutex<Writer> = Mutex::new(Writer {
+pub static mut WRITER: Writer = Writer {
     column_position: 0,
+    row_position: 0,
     color_code: ColorCode::new(Color::LightGray, Color::Black),
-    buffer: unsafe { Unique::new_unchecked(0xb8000 as *mut _) },
-});
+};
 
 macro_rules! println {
     ($fmt:expr) => (print!(concat!($fmt, "\n")));
@@ -125,7 +154,7 @@ macro_rules! println {
 macro_rules! print {
     ($($arg:tt)*) => ({
         use core::fmt::Write;
-        let mut writer = $crate::vga_buffer::WRITER.lock();
+        let writer = unsafe { &mut $crate::vga_buffer::WRITER };
         writer.write_fmt(format_args!($($arg)*)).unwrap();
     });
 }
@@ -146,7 +175,11 @@ macro_rules! hex_dump {
 }
 
 pub fn clear_screen() {
-    for _ in 0..BUFFER_HEIGHT {
-        println!("");
+    unsafe {
+        for row in 0..BUFFER_HEIGHT {
+            WRITER.clear_row(row);
+        }
+        WRITER.column_position = 0;
+        WRITER.row_position = 0;
     }
 }
