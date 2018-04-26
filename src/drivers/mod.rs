@@ -1,7 +1,8 @@
-mod utils;
-mod pic;
 pub mod ata;
 pub mod keyboard;
+pub mod cursor;
+mod utils;
+mod pic;
 use self::pic::Pic;
 
 pub fn configure() {

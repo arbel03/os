@@ -37,8 +37,8 @@ struct ScreenChar {
     color_code: ColorCode,
 }
 
-const BUFFER_HEIGHT: usize = 25;
-const BUFFER_WIDTH: usize = 80;
+pub const BUFFER_HEIGHT: usize = 25;
+pub const BUFFER_WIDTH: usize = 80;
 
 struct Buffer {
     chars: [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT],
@@ -76,6 +76,7 @@ impl Writer {
                 self.column_position += 1;
             }
         }
+        self.update_cursor();
     }
 
     fn buffer(&mut self) -> &mut Buffer {
@@ -97,6 +98,8 @@ impl Writer {
         use core::cmp::min;
         self.row_position = min(self.row_position+1, BUFFER_HEIGHT-1);
         self.column_position = 0;
+
+        self.update_cursor();
     }
 
     fn clear_row(&mut self, row: usize) {
@@ -107,6 +110,10 @@ impl Writer {
         for col in 0..BUFFER_WIDTH {
             self.buffer().chars[row][col] = blank;
         }
+    }
+
+    fn update_cursor(&self) {
+        ::drivers::cursor::Cursor.update_location(self.row_position, self.column_position);
     }
 
     pub fn delete_char(&mut self) {
@@ -128,6 +135,7 @@ impl Writer {
         self.column_position = col;
         self.row_position = row;
         self.buffer().chars[row][col] = blank;
+        self.update_cursor();
     }
 }
 
