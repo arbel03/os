@@ -162,6 +162,7 @@ macro_rules! println {
 macro_rules! print {
     ($($arg:tt)*) => ({
         use core::fmt::Write;
+        #[allow(unused_unsafe)]
         let writer = unsafe { &mut $crate::vga_buffer::WRITER };
         writer.write_fmt(format_args!($($arg)*)).unwrap();
     });

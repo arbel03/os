@@ -115,9 +115,22 @@ pub fn init() {
 
         // Setup syscalls
         syscall::init();
-
+        IDT.interrupts[0x42] = idt::IdtEntry::new(process_unwind_handler as u32, 3);
         IDT.load();
     }
+}
+
+#[naked]
+pub unsafe extern "C" fn process_unwind_handler() {
+    asm!("
+    mov ax, 0x10
+    mov ds, ax
+    mov fs, ax
+    mov es, ax
+    mov gs, ax
+    mov ss, ax
+    " :::: "intel");
+    ::task::unwind_process();
 }
 
 pub fn enable() {

@@ -38,27 +38,26 @@ pub unsafe extern "C" fn _start(argc: isize, argv: *const *const u8) -> isize {
     0
 }
 
-fn exit() {
-    print!("Process quit.\n");
-    loop {};
+unsafe fn exit() {
+    asm!("int 0x82" :::: "intel");
 }
 
-pub unsafe fn print_heap() {
-    use bitmap_allocator::CellState;
-    let allocator = &HEAP;
-    println!("Printing bitmap:");
-    let bitmap_size = allocator.get_block_count();
-    for index in 0..bitmap_size {
-        let block = allocator.get_cell(index).clone();
-        let block_string = match block {
-            CellState::Free => "_",
-            CellState::Boundary => "<",
-            CellState::Allocated => "=",
-        };
-        print!("{}", block_string);
-    }
-    print!("\n");
-}
+// pub unsafe fn print_heap() {
+//     use bitmap_allocator::CellState;
+//     let allocator = &HEAP;
+//     println!("Printing bitmap:");
+//     let bitmap_size = allocator.get_block_count();
+//     for index in 0..bitmap_size {
+//         let block = allocator.get_cell(index).clone();
+//         let block_string = match block {
+//             CellState::Free => "_",
+//             CellState::Boundary => "<",
+//             CellState::Allocated => "=",
+//         };
+//         print!("{}", block_string);
+//     }
+//     print!("\n");
+// }
 
 #[lang = "eh_personality"] 
 extern fn eh_personality() {

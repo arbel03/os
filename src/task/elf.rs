@@ -126,6 +126,12 @@ impl ElfFile {
         }
     }
 
+    pub fn get_process_name(&self) -> &str {
+        let components: Vec<&str> = self.file_name.split("/").collect();
+        let n = components.len();
+        components[n-1]
+    }
+
     pub fn get_file_descriptor(&self) -> usize {
         self.file_descriptor
     }
@@ -135,7 +141,7 @@ impl ElfFile {
     }
 
     pub unsafe fn read_elf_header(fd: usize) -> ElfHeader {
-        use syscall::fs::{ read, seek };
+        use syscall::{ read, seek };
         use core::slice::from_raw_parts_mut;
 
         let mut header = ElfHeader::default();
@@ -146,7 +152,7 @@ impl ElfFile {
     }
 
     pub unsafe fn read_program_header_entries(file_descriptor: usize, header: &ElfHeader) -> Vec<ProgramHeaderEntry> {
-        use syscall::fs::{ read, seek };
+        use syscall::{ read, seek };
         use core::slice::from_raw_parts_mut;
 
         let ph_entries = vec![ProgramHeaderEntry::empty(); header.phnum as usize];

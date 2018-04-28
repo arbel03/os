@@ -35,9 +35,8 @@ pub enum LoadError {
     NoMemory,
 }
 
-pub(in super) unsafe fn load_process(process: &Process, args: &[&str], load_request: LoadRequest) -> Result<LoadInformation, LoadError> {
-    use syscall::fs::{ seek, read };
-    
+pub(in super) unsafe fn load_process(process: &Process, args: &[&str], load_request: LoadRequest) -> Result<LoadInformation, LoadError> {    
+    use syscall::{ read, seek };
     let process_size_total = load_request.get_total_process_size();
     
     // Allocating process
@@ -164,7 +163,7 @@ pub enum CreationError {
 }
 
 pub(in super) unsafe fn create_process(executable_path: &str) -> Result<Process, CreationError> {
-    use syscall::fs::open;
+    use syscall::open;
 
     let fd: usize = open(executable_path);
     let header = ElfFile::read_elf_header(fd);

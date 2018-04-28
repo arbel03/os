@@ -48,9 +48,6 @@ static HEAP: Heap = Heap::new(BitmapAllocator::new(0, 0, 0));
 
 #[no_mangle]
 pub extern fn kmain(bootloader_info: &BootloaderInfo) {
-    // Disable hardware interrupts
-    interrupts::disable();
-
     vga_buffer::clear_screen();
     
     let free_memory_areas = memory::init(bootloader_info); 
@@ -60,9 +57,6 @@ pub extern fn kmain(bootloader_info: &BootloaderInfo) {
     filesystem::init();
     // Initializing tasks with free memory areas
     task::init(free_memory_areas);
-
-    // Enable hardware interrupts
-    interrupts::enable();
 
     vga_buffer::clear_screen();
     unsafe {

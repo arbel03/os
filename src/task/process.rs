@@ -22,7 +22,8 @@ pub struct TaskStateSegment {
     pub iopb_offset: u16,
 }
 
-#[derive(Debug, Default)]
+#[repr(packed)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct CpuState {
     pub eip: u32,
     pub eflags: u32,
@@ -30,7 +31,7 @@ pub struct CpuState {
     pub ecx: u32,
     pub edx: u32,
     pub ebx: u32,
-    pub esp: u32, 
+    pub esp: u32,
     pub ebp: u32,
     pub esi: u32,
     pub edi: u32,
@@ -45,7 +46,6 @@ pub struct CpuState {
 pub struct Process {
     pub executable_file: ElfFile,
     load_information: Option<LoadInformation>,
-    parent_process: Option<Box<Process>>,
     cpu_state: CpuState,
     ldt: SegmentDescriptorTable,
     tss: TaskStateSegment,
@@ -56,15 +56,10 @@ impl Process {
         Process {
             executable_file: executable_file,
             load_information: None,
-            parent_process: None,
             cpu_state: CpuState::default(),
             ldt: SegmentDescriptorTable::new(),
             tss: TaskStateSegment::default(),
         }
-    }
-
-    pub fn set_parent_process(&mut self, parent_process: Box<Process>) {
-        self.parent_process = Some(parent_process);
     }
 
     pub fn set_load_information(&mut self, load_information: LoadInformation) {
@@ -102,22 +97,6 @@ impl Process {
     }
 
     pub fn set_cpu_state(&mut self, cpu_state: CpuState) {
-        // self.tss.cs = cs as u32;
-        // self.tss.ds = ds as u32;
-        // self.tss.es = ds as u32;
-        // self.tss.gs = ds as u32;
-        // self.tss.fs = ds as u32;
-        // self.tss.ss = ds as u32;
-        // self.tss.eax = eax;
-        // self.tss.ebx = ebx;
-        // self.tss.ecx = ecx;
-        // self.tss.edx = edx;
-        // self.tss.edi = edi;
-        // self.tss.esi = esi;
-        // self.tss.ebp = ebp;
-        // self.tss.eflags = eflags;
-        // self.tss.eip = eip;
-        // self.tss.esp = esp;
         self.cpu_state = cpu_state;
     }
 }

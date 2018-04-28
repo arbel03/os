@@ -17,7 +17,7 @@ pub fn main(argc: usize, argv: *const *const u8) {
     let args = &unsafe { std::args::get_args(argc, argv) };
     if argc != 2 {
         let file_name = args[0];
-        println!("Usage:\n{} <file_name>", file_name);
+        println!("Usage:\n\t{} <file_name>", file_name);
         return;
     }
 

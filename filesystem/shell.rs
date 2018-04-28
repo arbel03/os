@@ -9,6 +9,7 @@ extern crate alloc;
 extern crate std;
 
 use std::io;
+use alloc::Vec;
 
 #[no_mangle]
 pub fn main(argc: usize, argv: *const *const u8) {
@@ -16,10 +17,18 @@ pub fn main(argc: usize, argv: *const *const u8) {
     loop {
         print!("{} $ ", args[0]);
         let input = io::read_string();
-        if input == "quit" {
-            break;
-        } else if input == "print heap" {
-            unsafe { std::print_heap(); }
+        let command: Vec<&str> = input.trim().split(' ').collect();
+        if command.len() > 0 {
+            match command[0] {
+                "echo" => println!("{}", input),
+                _ => run_exec(command[0], &command[1..]),
+            }
+        } else {
+            println!("Please enter a command.\nEnter 'Help' or '?' for more information.");
         }
     }
+}
+
+fn run_exec(path_name: &str, args: &[&str]) {
+    std::syscalls::execv(path_name, args); 
 }
