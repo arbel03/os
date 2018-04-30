@@ -111,26 +111,21 @@ pub fn init() {
         // Exceptions
         IDT.exceptions.double_fault = define_interrupt_with_error_code!(double_fault, 0);
         IDT.exceptions.general_protection_fault = define_interrupt_with_error_code!(general_protection_fault, 0);
-        IDT.exceptions.invalid_tss = define_interrupt_with_error_code!(invalid_tss, 0);
+        IDT.exceptions.breakpoint = define_interrupt!(breakpoint_exception, 0);
 
         // Setup syscalls
         syscall::init();
-        IDT.interrupts[0x42] = idt::IdtEntry::new(process_unwind_handler as u32, 3);
+        IDT.interrupts[0x42] = define_interrupt!(process_unwind_handler, 3);
         IDT.load();
     }
 }
 
 #[naked]
-pub unsafe extern "C" fn process_unwind_handler() {
-    asm!("
-    mov ax, 0x10
-    mov ds, ax
-    mov fs, ax
-    mov es, ax
-    mov gs, ax
-    mov ss, ax
-    " :::: "intel");
-    ::task::unwind_process();
+pub extern "C" fn process_unwind_handler(_stack_frame: &idt::ExceptionStackFrame) {
+    unsafe {
+        ::task::unwind_process();
+        ::core::intrinsics::unreachable();
+    }
 }
 
 pub fn enable() {

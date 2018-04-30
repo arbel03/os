@@ -16,6 +16,7 @@ pub fn main(argc: usize, argv: *const *const u8) {
     let args = &unsafe { std::args::get_args(argc, argv) };
     loop {
         print!("{} $ ", args[0]);
+        use alloc::string::ToString;
         let input = io::read_string();
         let command: Vec<&str> = input.trim().split(' ').collect();
         if command.len() > 0 {

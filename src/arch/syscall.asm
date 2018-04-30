@@ -13,6 +13,8 @@ syscall_handler:
 
     mov eax, esp
 
+    push ebp
+
     ; Data segments
     push gs
     push fs
@@ -36,6 +38,8 @@ syscall_handler:
     pop es
     pop fs
     pop gs
+
+    pop ebp
 
     pop edi
     pop esi

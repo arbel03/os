@@ -38,7 +38,7 @@ pub unsafe fn setup_descriptors(_bootloader_info: &BootloaderInfo) {
 
 pub fn get_free_areas(current_memory_map: &[MemoryArea; 10], occupied_area_iter: &mut ::core::slice::Iter<MemoryArea>) -> [MemoryArea; 10] {
     if let Some(current_occupied_area) = occupied_area_iter.next() {
-        let mut new_memory_map = [MemoryArea::Empty; 10];
+        let mut new_memory_map = [MemoryArea::EMPTY; 10];
         let mut insertion_index = 0;
         for area in current_memory_map {
             let result = MemoryArea::from(area.clone()).subtract(current_occupied_area);
@@ -73,7 +73,7 @@ pub fn init(bootloader_info: &BootloaderInfo) -> Vec<MemoryArea> {
     let kernel_area = MemoryArea::new(bootloader_info.kernel_start as usize, bootloader_info.kernel_end as usize - bootloader_info.kernel_start as usize);
     let memory_map = MemoryMap::new(bootloader_info);
     
-    let mut free_memory_areas = [MemoryArea::Empty; 10];
+    let mut free_memory_areas = [MemoryArea::EMPTY; 10];
     let mut current_index = 0;
     for entry in memory_map.memory_map.iter() {
         if entry.get_region_type() as u32 == MemoryAreaType::Free as u32 {

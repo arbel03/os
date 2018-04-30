@@ -19,9 +19,8 @@ pub(in super) extern "C" fn double_fault(stack_frame: &ExceptionStackFrame, erro
     loop {};
 }
 
-pub(in super) extern "C" fn invalid_tss(stack_frame: &ExceptionStackFrame, error_code: u32) {
-    println!("Exception! Invalid TSS.");
-    println!("Error Code: {:b}", error_code);
+pub(in super) extern "C" fn breakpoint_exception(stack_frame: &ExceptionStackFrame) {
+    println!("Breakpoint Exception! press any key to continue.");
     println!("{}", stack_frame);
-    loop {};
+    ::drivers::keyboard::getc();
 }

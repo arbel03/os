@@ -52,7 +52,7 @@ impl BitmapAllocator {
 
     pub fn get_cell(&self, index: usize) -> &mut CellState {
         if index >= self.block_count {
-            panic!("Tried to access bitmap cell outside of bounds.");
+            panic!("Tried to access bitmap cell at index {} outside of bounds.", index);
         }
         let bitmap_start = self.bitmap_start as *mut CellState;
         let cell = unsafe { &mut *bitmap_start.offset(index as isize) };

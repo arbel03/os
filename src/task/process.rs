@@ -1,7 +1,6 @@
 use memory::gdt::SegmentDescriptorTable;
 use memory::segmentation::{ SegmentDescriptor };
 use alloc::vec::Vec;
-use alloc::boxed::Box;
 use super::elf::*;
 use super::loader::LoadInformation;
 
@@ -22,25 +21,21 @@ pub struct TaskStateSegment {
     pub iopb_offset: u16,
 }
 
-#[repr(packed)]
+#[repr(packed, C)]
 #[derive(Debug, Default, Clone, Copy)]
 pub struct CpuState {
-    pub eip: u32,
-    pub eflags: u32,
-    pub eax: u32,
-    pub ecx: u32,
-    pub edx: u32,
-    pub ebx: u32,
-    pub esp: u32,
-    pub ebp: u32,
-    pub esi: u32,
-    pub edi: u32,
-    pub es: u32,
-    pub cs: u32,
-    pub ss: u32,
-    pub ds: u32,
-    pub fs: u32,
-    pub gs: u32
+    pub eip: u32, //1
+    pub eflags: u32, //2
+    pub cs: u32, //3
+    pub ds: u32,//4
+    pub ebp: u32,//5
+    pub esp: u32,//6
+    pub edi: u32,//7
+    pub esi: u32,//8
+    pub edx: u32,//9
+    pub ecx: u32,//10
+    pub ebx: u32,//11
+    pub eax: u32,//12
 }
 
 pub struct Process {

@@ -63,7 +63,7 @@ pub struct MemoryArea {
 }
 
 impl MemoryArea {
-    pub const Empty: MemoryArea = MemoryArea {
+    pub const EMPTY: MemoryArea = MemoryArea {
         base: 0,
         size: 0,
     };

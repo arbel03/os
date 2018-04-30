@@ -16,6 +16,28 @@ pub fn to_str<'a>(ptr: usize, size: usize) -> &'a str {
     }
 }
 
+pub unsafe fn terminated_string<'a>(start: *const u8) -> &'a str {
+    use core::{ str, slice, ptr };
+
+    let mut length: isize = 0;
+    loop {
+        let current = start.offset(length);
+        if ptr::read(current) == 0u8 {
+            break;
+        }
+        length += 1;
+    }
+    return str::from_utf8_unchecked(slice::from_raw_parts(start, length as usize));
+}
+
+unsafe fn read_args<'a>(args: &[*const u8]) -> Vec<&'a str> {
+    let mut arguments: Vec<&str> = Vec::with_capacity(args.len());
+    for ptr in args.iter().cloned() {
+        arguments.push(terminated_string(ptr));
+    }
+    return arguments;
+}
+
 const SYS_FOPEN: usize = 0x1;
 const SYS_PRINT: usize = 0x2;
 const SYS_READ: usize = 0x03;
@@ -55,33 +77,12 @@ pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize
             file_size(b)
         },
         SYS_EXECV => {
-            unsafe fn read_args<'a>(argv: *const *const u8, argc: usize, process: &::task::process::Process) -> Vec<&'a str> {
-                pub unsafe fn terminated_string<'a>(start: *const u8) -> &'a str {
-                    use core::{ str, slice, ptr };
-
-                    let mut length: isize = 0;
-                    loop {
-                        let current = start.offset(length);
-                        if ptr::read(current) == 0u8 {
-                            break;
-                        }
-                        length += 1;
-                    }
-                    return str::from_utf8_unchecked(slice::from_raw_parts(start, length as usize));
-                }
-
-                let mut args: Vec<&str> = Vec::with_capacity(argc);
-                let ptr_slice = slice::from_raw_parts(argv, argc);
-                for (index, ptr) in ptr_slice.iter().enumerate() {
-                    let physical_ptr = process.get_load_information().translate_virtual_to_physical_address(ptr.clone());
-                    args.push(terminated_string(physical_ptr));
-                }
-                return args;
-            }
-            
             let name_ptr = current_process.get_load_information().translate_virtual_to_physical_address(b as *const u8);
             let args_ptr = current_process.get_load_information().translate_virtual_to_physical_address(d as *const u8) as *const *const u8;
-            execv(to_str(name_ptr as usize, c), &read_args(args_ptr, e, &current_process))
+            let args_slice = slice::from_raw_parts(args_ptr, e);
+            let args: Vec<*const u8> = args_slice.iter().cloned().map(|addr| current_process.get_load_information().translate_virtual_to_physical_address(addr)).collect();
+
+            execv(to_str(name_ptr as usize, c), &read_args(&args))
         }
         _ => UNDEFINED_SYSCALL
     }

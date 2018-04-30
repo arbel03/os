@@ -28,7 +28,7 @@ create_filesystem() {
     (sudo umount /mnt || true) 2> /dev/null
 
     # Creating empty disk image with a size of 5mb
-    dd if=/dev/zero of=$FILESYSTEM bs=$BLOCK_SIZE count=34 2> /dev/null
+    dd if=/dev/zero of=$FILESYSTEM bs=$BLOCK_SIZE count=50 2> /dev/null
     
     # Getting the size of FILESYSTEM_HEAD
     RESEREVED_SECTORS=$(filesize_in_sectors $FILESYSTEM_HEAD)
@@ -96,7 +96,7 @@ run() {
         echo "Kernel attached."
         echo "Running operating system."
         # Running
-        qemu-system-i386 -drive file=$OS_FILE,format=raw -monitor stdio # -d int
+        qemu-system-i386 -drive file=$OS_FILE,format=raw -monitor stdio -d int
     fi
 }
 

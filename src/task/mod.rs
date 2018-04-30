@@ -4,9 +4,9 @@ mod elf;
 
 use self::process::*;
 use BitmapAllocator;
-use alloc::boxed::Box;
 use alloc::Vec;
 use memory::MemoryArea;
+use core::slice;
 
 static mut PROCESS_ALLOCATOR: BitmapAllocator = BitmapAllocator::new(0x0, 0x0, 0x0);
 pub static mut PROCESS_LIST: Option<Vec<Process>> = None;
@@ -34,9 +34,9 @@ pub fn add_process(process: Process) {
     }
 }
 
-pub fn pop_process() {
+pub fn pop_process() -> Process {
     unsafe {
-        PROCESS_LIST.as_mut().unwrap().pop();
+        PROCESS_LIST.as_mut().unwrap().pop().unwrap()
     }
 }
 
@@ -57,13 +57,20 @@ pub fn get_parent_process<'a>() -> Option<&'a mut Process> {
 }
 
 pub unsafe fn execv(file_name: &str, args: &[&str]) {
+    set_old_process_state_wrapper();
+
+    execv_inner(file_name, args);
+
+    asm!("continue_task_label:" :::: "intel");
+}
+
+pub unsafe fn execv_inner(file_name: &str, args: &[&str]) {
     use memory::segmentation::{ SegmentSelector, TableType };
 
     let process = loader::create_process(file_name).expect("An error occured.");
     add_process(process);
     
     let process = get_current_process();
-    
 
     let mut arguments = vec![];
     arguments.push(file_name);
@@ -76,7 +83,7 @@ pub unsafe fn execv(file_name: &str, args: &[&str]) {
 
     process.set_ldt_descriptors(load_information.get_ldt_entries());
 
-    let kernel_stack = 0x9fc00 - (PROCESS_LIST.as_ref().unwrap().len()-1) * 0x10000;
+    let kernel_stack = 0x9fc00 - (PROCESS_LIST.as_ref().unwrap().len()-1) * 0x20000;
     process.set_kernel_stack(0x10, kernel_stack as u32);
 
     let code_selector = SegmentSelector::new(0, TableType::LDT, 3);
@@ -89,16 +96,11 @@ pub unsafe fn execv(file_name: &str, args: &[&str]) {
     "{ebx}"(load_information.process_base.offset(stack_pointer as isize) as u32),
     "r"(load_information.arguments_count),
     "r"(load_information.argument_pointers_start)
-    :: "intel");
+    :: "intel", "volatile");
     
     let entry_point = process.get_elf_header().entry_point as u32;
     let mut init_cpu_state = CpuState::default();
     init_cpu_state.ds = data_selector as u32;
-    init_cpu_state.fs = data_selector as u32;
-    init_cpu_state.es = data_selector as u32;
-    init_cpu_state.gs = data_selector as u32;
-    init_cpu_state.ss = data_selector as u32;
-
     init_cpu_state.cs = code_selector as u32;
     init_cpu_state.esp = stack_pointer as u32 - 4;
     init_cpu_state.ebp = init_cpu_state.esp;
@@ -107,51 +109,63 @@ pub unsafe fn execv(file_name: &str, args: &[&str]) {
     process.set_cpu_state(init_cpu_state);
     process.set_load_information(load_information);
 
-    switch_process_new_wrapper();
+    println!("Performing context switch");
+    context_switch();
 }
 
 #[naked]
-pub unsafe fn switch_process_new_wrapper() {
+pub unsafe extern "C" fn set_old_process_state_wrapper() {
     asm!("
-    push gs
-    push fs
-    push ds
-    push ss
-    push cs
-    push es
-    push edi
-    push esi
-    push ebp
-    mov edi, esp
-    push edi
+    push eax
     push ebx
-    push edx
     push ecx
-    push eax
-    pushfd
-    mov eax, .continue_task
-    push eax
-    
+    push edx
+    push esi
+    push edi
+
     mov eax, esp
+    add eax, 6*4
+    add eax, 1*4 // return address
+    push eax
+
+    push ebp
+
+    mov eax, ds
+    push eax
+    mov eax, cs
+    push eax
+
+    pushfd
+
+    lea eax, continue_task_label
     push eax
 
     mov ebx, $0
     call ebx
 
-    add esp, 16*4 
-.continue_task:
-    ret
-    "
-    :: "m"(switch_process_new as u32) :: "intel");
+    // Dont restore EIP, EFLAGS
+    // Dont have to restore CS and DS
+    add esp, 4*4
+    pop ebp
+    // Dont restore esp
+    add esp, 4*1
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    pop eax
+
+    ret"
+    :: "m"(set_old_process_state as u32) :: "intel", "volatile");
 }
 
-pub unsafe fn switch_process_new(cpu_state: &CpuState) {
+pub unsafe extern "C" fn set_old_process_state(cpu_state: CpuState) {
     if let Some(parent_process) = get_parent_process() {
         println!("Setting process state for process \"{}\"", parent_process.executable_file.get_process_name());
-        println!("{:?}", cpu_state);
-        parent_process.set_cpu_state(cpu_state.clone());
+        println!("{:?}", &cpu_state);
+        parent_process.set_cpu_state(cpu_state);
     }
-    context_switch();
 }
 
 pub unsafe fn context_switch() {
@@ -166,41 +180,61 @@ pub unsafe fn context_switch() {
     asm!("lldt $0" :: "r"(GDT.get_selector(DescriptorType::LdtDescriptor, 0) as u16) :: "intel");
     asm!("ltr $0" :: "r"(GDT.get_selector(DescriptorType::TssDescriptor, 0) as u16) :: "intel");
 
-    // println!("Context switch to: {:?}", process.get_cpu_state());
-
     asm!("mov ebx, $0
 
-    push [ebx+4*13]
-    push [ebx+4*6]
-    pushfd
-    push [ebx+4*11]
-    push [ebx+4*0]
+    mov eax, [ebx+4*3]  // Data segment
+    push eax
+    mov eax, [ebx+4*5] // ESP
+    push eax
+    mov eax, [ebx+4*1]  // Flags
+    push eax            
+    mov eax, [ebx+4*2]  // Code segment
+    push eax
+    mov eax, [ebx+4*0]  // EIP
+    push eax
+   
+    mov ecx, [ebx+4*9]
+    mov edx, [ebx+4*8]
+    mov ebp, [ebx+4*4]
+    mov esi, [ebx+4*7]
+    mov edi, [ebx+4*6]
 
-    mov eax, [ebx+4*13]
+    // Pushing ebx
+    mov eax, [ebx+4*10]
+    push eax
+
+    // Setting segment selectors
+    mov eax, [ebx+4*3]
     mov ds, ax
     mov fs, ax
     mov gs, ax
     mov es, ax
 
-    mov ecx, [ebx+4*3]
-    mov edx, [ebx+4*4]
-    mov esi, [ebx+4*8]
-    mov edi, [ebx+4*9]
-    mov eax, [ebx+4*7]
-    mov ebp, eax
-    mov eax, [ebx+4*5]
-    push eax
-    mov eax, [ebx+4*2]
+    // OS Dev says to restore CR0 too, but it crashes when I does
+    // mov eax, [ebx+4*2]
+    // mov cr0, eax
+
+    // Setting eax
+    mov eax, [ebx+4*11]
+
+    // Setting ebx
     pop ebx
-    iretd
-    " ::
-    "r"(process.get_cpu_state() as *const CpuState)
+
+    iretd" ::
+    "m"(process.get_cpu_state() as *const CpuState as u32)
     :: "intel", "volatile");
     ::core::intrinsics::unreachable();
 }
 
 pub unsafe fn unwind_process() {
-    println!("Performing unwind context switch.");
-    pop_process();
+    let process = pop_process();
+    println!("Deallocating process {}", process.executable_file.get_process_name());
+    // Deallocating process
+    use alloc::allocator::Layout;
+    use alloc::allocator::Alloc;
+    let process_base = process.get_load_information().process_base;
+    let layout = Layout::from_size_align_unchecked(0, 1);
+    (&PROCESS_ALLOCATOR).dealloc(process_base as *mut u8, layout);
+
     context_switch();
 }
