@@ -1,5 +1,5 @@
 # Screenshots
-![screenshot](https://preview.ibb.co/nHcGBc/Screen_Shot_2018_04_09_at_23_31_37.png)
+![screenshot](https://i.imgur.com/kmqk6md.png)
 
 # Compilation Manual
 
@@ -19,3 +19,7 @@ Add the rust source code component for cross compiling (needed by xargo).
 
 ### Run
 Run using `./run.sh`  
+
+### TwoUnderscorez's OS
+
+An operating system similar to mine, but written in C, utilizes paging and implements ext2, [click here to check it out!](https://github.com/TwoUnderscorez/DuckOS)
