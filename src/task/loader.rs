@@ -60,11 +60,9 @@ pub(in super) unsafe fn load_process(process: &Process, args: &[&str], load_requ
         if segment.entry_type.get_type() == EntryType::PtLoad {
             // Segment is an executable segment
             if segment.flags & Flags::Executable as u32 == Flags::Executable as u32 {
-                // println!("Loaded code segment.");
                 // Adding a new user space code descriptor
                 ldt_entries.insert(0, SegmentDescriptor::new(process_base as u32, process_limit/0x1000+1, 0b11111010, 0b1100));    
             } else {
-                // println!("Loaded data segment.");
                 // Adding a new user space data descriptor
                 ldt_entries.push(SegmentDescriptor::new(process_base as u32, process_limit/0x1000+1, 0b11110010, 0b1100));
             }
@@ -88,6 +86,7 @@ pub(in super) unsafe fn load_process(process: &Process, args: &[&str], load_requ
         let arg_slice = slice::from_raw_parts_mut(arguments_start_physical.offset(arg_offset as isize), arg.len());
         arg_slice.clone_from_slice(arg.as_bytes());
         pointers_slice[index] = arguments_start.offset(arg_offset as isize);
+        *(arg_slice.as_mut_ptr().offset(arg_slice.len() as isize)) = 0;
         arg_offset += arg.len() + 1;
     }
 

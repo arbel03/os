@@ -109,7 +109,6 @@ pub unsafe fn execv_inner(file_name: &str, args: &[&str]) {
     process.set_cpu_state(init_cpu_state);
     process.set_load_information(load_information);
 
-    println!("Performing context switch");
     context_switch();
 }
 
@@ -228,7 +227,6 @@ pub unsafe fn context_switch() {
 
 pub unsafe fn unwind_process() {
     let process = pop_process();
-    println!("Deallocating process {}", process.executable_file.get_process_name());
     // Deallocating process
     use alloc::allocator::Layout;
     use alloc::allocator::Alloc;

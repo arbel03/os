@@ -23,6 +23,7 @@ pub fn main(argc: usize, argv: *const *const u8) {
 
     let file_name = args[1];
     let fd = std::syscalls::open(file_name);
+    println!("Printing contents of \"{}\":", file_name);
     if fd != 0xffffffff {
         let file_size = std::syscalls::filesz(fd);
         let mut vector = vec![0u8;file_size];

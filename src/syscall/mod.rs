@@ -9,10 +9,7 @@ use alloc::Vec;
 pub fn to_str<'a>(ptr: usize, size: usize) -> &'a str {
     unsafe {
         let slice = slice::from_raw_parts(ptr as *const u8, size);
-        if let Ok(string) = str::from_utf8(slice) {
-            return string;
-        }
-        return "Invalid String.";
+        return str::from_utf8_unchecked(slice);
     }
 }
 
