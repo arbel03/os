@@ -165,6 +165,9 @@ pub(in super) unsafe fn create_process(executable_path: &str) -> Result<Process,
     use syscall::open;
 
     let fd: usize = open(executable_path);
+    if fd == 0xffffffff {
+        return Err(CreationError::ExecutableNotFound);
+    }
     let header = ElfFile::read_elf_header(fd);
     if !header.is_valid() {
         return Err(CreationError::InvalidElfHeader);

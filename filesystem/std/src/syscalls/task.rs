@@ -8,7 +8,7 @@ pub fn execv(path_name: &str, args: &[&str]) -> usize {
         let mut string_arg = arg.to_string();
         string_arg.push('\x00');
         arguments.push(string_arg);
-        ptr_list.push(arg.as_ptr() as *const u8);
+        ptr_list.push(arguments[arguments.len()-1].as_ptr() as *const u8);
     }
 
     unsafe {

@@ -17,7 +17,7 @@ pub mod syscalls;
 // Setting up heap
 use bitmap_allocator::BitmapAllocator;
 
-const HEAP_SIZE: usize = 1024*5;
+const HEAP_SIZE: usize = 1024*20;
 static mut HEAP_AREA: [u8;HEAP_SIZE] = [0u8;HEAP_SIZE];
 
 #[global_allocator]

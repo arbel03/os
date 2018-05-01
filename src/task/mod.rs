@@ -2,11 +2,12 @@ pub mod process;
 mod loader;
 mod elf;
 
-use self::process::*;
 use BitmapAllocator;
-use alloc::Vec;
+use self::process::*;
+use self::loader::*;
 use memory::MemoryArea;
 use core::slice;
+use alloc::Vec;
 
 static mut PROCESS_ALLOCATOR: BitmapAllocator = BitmapAllocator::new(0x0, 0x0, 0x0);
 pub static mut PROCESS_LIST: Option<Vec<Process>> = None;
@@ -56,19 +57,26 @@ pub fn get_parent_process<'a>() -> Option<&'a mut Process> {
     }
 }
 
-pub unsafe fn execv(file_name: &str, args: &[&str]) {
+pub unsafe fn execv(file_name: &str, args: &[&str]) -> usize {
     set_old_process_state_wrapper();
+
+    let process = match loader::create_process(file_name) {
+        Ok(process) => process,
+        Err(load_error) => match load_error {
+            CreationError::ExecutableNotFound => return 0xffffffff,
+            CreationError::InvalidElfHeader => return 0xfffffffe,
+        }
+    };
+    add_process(process);
 
     execv_inner(file_name, args);
 
     asm!("continue_task_label:" :::: "intel");
+    0
 }
 
 pub unsafe fn execv_inner(file_name: &str, args: &[&str]) {
     use memory::segmentation::{ SegmentSelector, TableType };
-
-    let process = loader::create_process(file_name).expect("An error occured.");
-    add_process(process);
     
     let process = get_current_process();
 
@@ -161,8 +169,8 @@ pub unsafe extern "C" fn set_old_process_state_wrapper() {
 
 pub unsafe extern "C" fn set_old_process_state(cpu_state: CpuState) {
     if let Some(parent_process) = get_parent_process() {
-        println!("Setting process state for process \"{}\"", parent_process.executable_file.get_process_name());
-        println!("{:?}", &cpu_state);
+        // println!("Setting process state for process \"{}\"", parent_process.executable_file.get_process_name());
+        // println!("{:?}", &cpu_state);
         parent_process.set_cpu_state(cpu_state);
     }
 }
