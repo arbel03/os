@@ -1,106 +1,37 @@
 pub mod disk;
-mod fat32;
-mod file;
+pub mod fat32;
 mod descriptor;
+mod managed;
 
-use self::file::*;
-use self::descriptor::*;
+pub use self::descriptor::{ FilePointer, File };
+use self::managed::ManagedFilesystem;
 use self::disk::Disk;
+use alloc::Vec;
 use drivers::ata::Ata;
-use alloc::vec::Vec;
+
+#[repr(usize)]
+#[derive(Debug)]
+pub enum OpenError {
+    FileNotFound = 0xffffffff,
+    NotAFile = 0xfffffffe,
+    DescriptorAlreadyOpen = 0xfffffffd,
+}
 
 pub trait Filesystem {
-    type FileType: File;
-    fn open_file(&self, drive: &Disk, file_name: &str) -> Option<FilePointer<Self::FileType>>;
-    fn read_file(&self, drive: &Disk, file_pointer: &FilePointer<Self::FileType>, buffer: &mut [u8]) -> Option<usize>;
+    type EntryType: File;
+
+    fn get_root_directory(&self) -> Self::EntryType;
+    fn get_child_directories(&self, drive: &Disk, directory: &Self::EntryType) -> Vec<Self::EntryType>;
+    fn get_directory(&self, drive: &Disk, directory_path: &str) -> Option<Self::EntryType>;
+    fn get_file(&self, drive: &Disk, file_path: &str) -> Result<Self::EntryType, OpenError>;
+    fn read_file(&self, drive: &Disk, file_pointer: &FilePointer<Self::EntryType>, buffer: &mut [u8]) -> Option<usize>;
 } 
-
-pub struct ManagedFilesystem<'a, T: Filesystem> {
-    filesystem: T,
-    drive: &'a Disk,
-    descriptors: Vec<FileDescriptor<T::FileType>>,
-}
-
-#[allow(dead_code)]
-impl <'a, T: Filesystem>  ManagedFilesystem<'a, T> {
-    pub fn open_file(&mut self, file_name: &str) -> Option<usize> {
-        if let Some(file_pointer) = self.filesystem.open_file(self.drive, file_name) {
-            let mut lowest_index = self.descriptors.len();
-            for (index, descriptor) in self.descriptors.iter().enumerate() {
-                if descriptor.get_id() as usize > index {
-                    lowest_index = index;
-                    break;
-                }
-            }
-            let descriptor = FileDescriptor::new(lowest_index, FileMode::ReadWrite, file_pointer);
-            self.descriptors.insert(lowest_index, descriptor);
-            return Some(lowest_index);
-        }
-        return None;
-    }
-
-    // TODO: Add error handling
-    pub fn seek(&mut self, descriptor: usize, new_current: usize) {
-        if let Some(descriptor) = self.descriptors.iter_mut().find(|x| x.get_id() == descriptor) {
-            let file_pointer = descriptor.get_pointer_mut();
-            let file_size = file_pointer.get_file().get_size();
-            if new_current < file_size {
-                file_pointer.set_current(new_current);
-            } else {
-                println!("Trying to seek to outside of file bounds named {}", file_pointer.get_file().get_name());
-            }
-        } else {
-            println!("Descriptor {} is not open.", descriptor);
-        }
-    }
-
-    // TODO: Add error handling
-    pub fn close_descriptor(&mut self, descriptor: usize) {
-        let result = self.descriptors.iter().position(|x| x.get_id() == descriptor);
-        if let Some(index) = result {
-            self.descriptors.remove(index);
-        } else {
-            println!("Descriptor {} is not open.", descriptor);
-        }
-    }
-
-    // TODO: Add error handling
-    pub fn read_file(&mut self, descriptor: usize, buffer: &mut [u8]) -> usize {
-        if let Some(descriptor) = self.descriptors.iter_mut().find(|x| x.get_id() == descriptor) {
-            let file_pointer = descriptor.get_pointer_mut();
-            if let Some(result) = self.filesystem.read_file(self.drive, file_pointer, buffer) {
-                file_pointer.advance_current(result);
-            } else {
-                println!("Unable to read file.");
-            }
-        } else {
-            println!("Descriptor {} is not open.", descriptor);
-        }
-        0
-    }
-
-    // This is not a syscall
-    pub fn get_file_size(&self, descriptor: usize) -> usize {
-        if let Some(descriptor) = self.descriptors.iter().find(|x| x.get_id() == descriptor) {
-            let file_pointer = descriptor.get_pointer();
-            let file = file_pointer.get_file();
-            return file.get_size();
-        } else {
-            println!("Descriptor {} is not open.", descriptor);
-        }
-        0
-    }
-}
 
 // Fat Filesystem of the main disk.
 pub static mut FILESYSTEM: Option<ManagedFilesystem<fat32::Fat32>> = None;
 
 pub fn init() {
     unsafe {
-        FILESYSTEM = Some(ManagedFilesystem {
-            filesystem: fat32::Fat32::new(&Ata::PRIMARY),
-            drive: &Ata::PRIMARY,
-            descriptors: Vec::new(),
-        });
+        FILESYSTEM = Some(ManagedFilesystem::new(fat32::Fat32::new(&Ata::PRIMARY),  &Ata::PRIMARY));
     };
 }

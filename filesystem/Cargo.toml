@@ -19,3 +19,11 @@ path = "cat.rs"
 [[bin]]
 name = "shell"
 path = "shell.rs"
+
+[[bin]]
+name = "ls"
+path = "ls.rs"
+
+[[bin]]
+name = "stat"
+path = "stat.rs"

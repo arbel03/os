@@ -23,13 +23,15 @@ pub fn main(argc: usize, argv: *const *const u8) {
 
     let file_name = args[1];
     let fd = std::syscalls::open(file_name);
-    println!("Printing contents of \"{}\":", file_name);
-    if fd != 0xffffffff {
-        let file_size = std::syscalls::filesz(fd);
-        let mut vector = vec![0u8;file_size];
+    if fd == 0xffffffff {
+        println!("Error opening file \"{}\"", file_name);
+    } else if fd == 0xfffffffe {
+        println!("Invalid argument - \"{}\" if a folder.", file_name);
+    } else {
+        println!("Printing contents of \"{}\":", file_name);
+        let file_stat = std::syscalls::stat(file_name, 0);
+        let mut vector = vec![0u8;file_stat.directory_size];
         std::syscalls::read(fd, &mut vector);
         println!("{}", unsafe { str::from_utf8_unchecked(&vector) });
-    } else {
-        println!("Error opening file.");
     }
 }

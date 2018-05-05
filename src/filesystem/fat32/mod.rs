@@ -1,14 +1,14 @@
-mod directory;
+pub mod directory;
 mod table;
 
 use self::directory::*;
 use self::table::*;
-use super::{ Filesystem, FilePointer, File };
+use super::{ Filesystem, FilePointer, File, OpenError };
 use super::disk::Disk;
 
 use alloc::Vec;
-use alloc::string::String;
 use core::str::Split;
+use alloc::string::String;
 use core::slice;
 
 
@@ -89,7 +89,7 @@ impl Fat32 {
         return directories;
     }
 
-    fn find_file(&self, drive: &Disk, cluster: usize, path: &mut Split<&str>) -> Option<Directory> {
+    fn get_directory(&self, drive: &Disk, cluster: usize, path: &mut Split<&str>) -> Option<Directory> {
         if let Some(component) = path.next() {
             let current_dirs = self.read_folder(drive, cluster);
             let mut dir: &Directory;
@@ -108,8 +108,8 @@ impl Fat32 {
                     return None;
                 }
             }
-            if dir.get_fat_dir().is_folder() {
-                return self.find_file(drive, dir.get_fat_dir().get_cluster() as usize, path);
+            if dir.get_fat_dir().is_folder() && path.clone().peekable().peek().is_some() {
+                return self.get_directory(drive, dir.get_fat_dir().get_cluster() as usize, path);
             } else {
                 return Some(dir.clone());
             }
@@ -121,18 +121,34 @@ impl Fat32 {
 }
 
 impl Filesystem for Fat32 {
-    type FileType = Directory;
+    type EntryType = Directory;
 
-    fn open_file(&self, drive: &Disk, file_name: &str) -> Option<FilePointer<Directory>> {
-        let mut path_components = file_name.split("/");
-        if let Some(file) = self.find_file(drive, self.ebpb.root_dir_cluster as usize, &mut path_components) {
-           // If the file is really a file
-            return Some(FilePointer::new(0, file));
-        }
-        None
+    fn get_child_directories(&self, drive: &Disk, directory: &Directory) -> Vec<Directory> {
+        self.read_folder(drive, directory.get_fat_dir().get_cluster() as usize)
     }
 
-    fn read_file(&self, drive: &Disk, file_pointer: &FilePointer<Self::FileType>, buffer: &mut [u8]) -> Option<usize> {
+    fn get_root_directory(&self) -> Self::EntryType {
+        use alloc::string::ToString;
+        Directory::new(".".to_string(), FatDirectory::with_cluster(self.ebpb.root_dir_cluster))
+    }
+
+    fn get_file(&self, drive: &Disk, file_path: &str) -> Result<Directory, OpenError> {
+        let mut path_components = file_path.split("/");
+        if let Some(file) = self.get_directory(drive, self.ebpb.root_dir_cluster as usize, &mut path_components) {
+            if file.get_fat_dir().is_folder() {
+                return Err(OpenError::NotAFile);
+            }
+           // If the file is really a file
+            return Ok(file);
+        }
+        Err(OpenError::FileNotFound)
+    }
+
+    fn get_directory(&self, drive: &Disk, directory_path: &str) -> Option<Directory> {
+        self.get_directory(drive, self.ebpb.root_dir_cluster as usize, &mut directory_path.split("/"))
+    }
+
+    fn read_file(&self, drive: &Disk, file_pointer: &FilePointer<Self::EntryType>, buffer: &mut [u8]) -> Option<usize> {
         use core::cmp::min;
         let cluster_size = self.get_bytes_in_cluster();
 

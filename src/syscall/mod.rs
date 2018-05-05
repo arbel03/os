@@ -38,10 +38,11 @@ unsafe fn read_args<'a>(args: &[*const u8]) -> Vec<&'a str> {
 const SYS_FOPEN: usize = 0x1;
 const SYS_PRINT: usize = 0x2;
 const SYS_READ: usize = 0x03;
-const SYS_FILESZ: usize = 0x04;
+const SYS_STAT: usize = 0x04;
 const IO_GETC: usize = 0x05;
 const IO_DELC: usize = 0x06;
 const SYS_EXECV: usize = 0x07;
+const SYS_DIR_NAME: usize = 0x08;
 const UNDEFINED_SYSCALL: usize = 0xff;
 
 #[allow(unused_variables)]
@@ -70,9 +71,6 @@ pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize
             ::vga_buffer::WRITER.delete_char();
             0
         },
-        SYS_FILESZ => {
-            file_size(b)
-        },
         SYS_EXECV => {
             let name_ptr = current_process.get_load_information().translate_virtual_to_physical_address(b as *const u8);
             let args_ptr = current_process.get_load_information().translate_virtual_to_physical_address(d as *const u8) as *const *const u8;
@@ -80,7 +78,20 @@ pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize
             let args: Vec<*const u8> = args_slice.iter().cloned().map(|addr| current_process.get_load_information().translate_virtual_to_physical_address(addr)).collect();
 
             execv(to_str(name_ptr as usize, c), &read_args(&args))
-        }
+        },
+        SYS_STAT => {
+            let name_ptr = current_process.get_load_information().translate_virtual_to_physical_address(b as *const u8);
+            let stat_ptr = current_process.get_load_information().translate_virtual_to_physical_address(d as *const u8);
+            let child_node_count = e;
+            stat(to_str(name_ptr as usize, c), stat_ptr as *mut u8, e)
+        },
+        SYS_DIR_NAME => {
+            let parent_folder_ptr = current_process.get_load_information().translate_virtual_to_physical_address(b as *const u8);
+            let read_buffer_ptr = current_process.get_load_information().translate_virtual_to_physical_address(d as *const u8);
+            let read_buffer = slice::from_raw_parts_mut(read_buffer_ptr as *mut u8, e);
+            let child_node_count = f;
+            read_dir_name(to_str(parent_folder_ptr as usize, c), read_buffer, child_node_count)
+        },
         _ => UNDEFINED_SYSCALL
     }
 }

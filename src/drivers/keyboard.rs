@@ -73,8 +73,8 @@ pub struct RawScanCode(u8);
 impl RawScanCode {
     pub fn get_scancode(&self) -> Option<ScanCode> {
         let scancode = match self.0 {
-            0x02 ... 0x0B => ScanCode::new(ScanCodeType::Digit(self.0 - 0x01)),
-            0x0C => ScanCode::new(ScanCodeType::Digit(0)),
+            0x02 ... 0x0A => ScanCode::new(ScanCodeType::Digit(self.0 - 0x01)),
+            0x0B => ScanCode::new(ScanCodeType::Digit(0)),
             0x0E => ScanCode::new(ScanCodeType::Backspace),
             0x10 => ScanCode::new(ScanCodeType::Character('q')),
             0x11 => ScanCode::new(ScanCodeType::Character('w')),
@@ -108,6 +108,7 @@ impl RawScanCode {
             0x33 => ScanCode::new(ScanCodeType::Character(',')),
             0x34 => ScanCode::new(ScanCodeType::Character('.')),
             0x35 => ScanCode::new(ScanCodeType::Character('/')),
+            0x0C => ScanCode::new(ScanCodeType::Character('-')),
             0x36 => ScanCode::new(ScanCodeType::Shift),
             0xAA => ScanCode::new(ScanCodeType::Shift).released(),
             0xB6 => ScanCode::new(ScanCodeType::Shift).released(),

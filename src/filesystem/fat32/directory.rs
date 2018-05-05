@@ -1,5 +1,5 @@
+use filesystem::descriptor::File;
 use alloc::string::String;
-use super::File;
 
 #[repr(u8)]
 #[allow(dead_code)]
@@ -64,6 +64,23 @@ pub struct FatDirectory {
 }
 
 impl FatDirectory {
+    pub fn with_cluster(cluster: u32) -> Self {
+        FatDirectory {
+            name: ['.' as u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            attributes: FileAttributes::Directory as u8,
+            flags_nt: 0,
+            creation_time_precise: 0,
+            creation_time: 0,
+            creation_date: 0,
+            last_accessed: 0,
+            first_cluster_high: (cluster >> 16) as u16,
+            last_modified_time: 0,
+            last_modified_date: 0,
+            first_cluster_low: cluster as u16,
+            file_size: 0,
+        }
+    }
+
     pub fn get_short_name(&self) -> String {
         use alloc::string::ToString;
         String::from_utf8(self.name.to_vec()).expect("Invalid UTF-8.").trim().to_string()
