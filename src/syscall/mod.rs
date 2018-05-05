@@ -35,31 +35,33 @@ unsafe fn read_args<'a>(args: &[*const u8]) -> Vec<&'a str> {
     return arguments;
 }
 
-const SYS_FOPEN: usize = 0x1;
-const SYS_PRINT: usize = 0x2;
-const SYS_READ: usize = 0x03;
-const SYS_STAT: usize = 0x04;
+const FS_OPEN: usize = 0x01;
+const FS_PRINT: usize = 0x02;
+const FS_READ: usize = 0x03;
+const FS_STAT: usize = 0x04;
 const IO_GETC: usize = 0x05;
 const IO_DELC: usize = 0x06;
-const SYS_EXECV: usize = 0x07;
-const SYS_DIR_NAME: usize = 0x08;
+const PROC_EXECV: usize = 0x07;
+const FS_DIR_NAME: usize = 0x08;
+const PROC_INFO: usize = 0x09;
+const PROC_SIZE: usize = 0x10;
 const UNDEFINED_SYSCALL: usize = 0xff;
 
 #[allow(unused_variables)]
 pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize) -> usize {
     let current_process = ::task::get_current_process();
     match a {
-        SYS_FOPEN => {         
+        FS_OPEN => {         
             let ptr = current_process.get_load_information().translate_virtual_to_physical_address(b as *const u8);
             open(to_str(ptr as usize, c)) 
         },
-        SYS_PRINT => {
+        FS_PRINT => {
             let ptr = current_process.get_load_information().translate_virtual_to_physical_address(b as *const u8);
             let string = to_str(ptr as usize, c);
             print!("{}", string);
             0
         },
-        SYS_READ => {
+        FS_READ => {
             let ptr = current_process.get_load_information().translate_virtual_to_physical_address(c as *const u8);
             let slice = slice::from_raw_parts_mut(ptr as *mut u8, d);
             read(b, slice)
@@ -71,7 +73,7 @@ pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize
             ::vga_buffer::WRITER.delete_char();
             0
         },
-        SYS_EXECV => {
+        PROC_EXECV => {
             let name_ptr = current_process.get_load_information().translate_virtual_to_physical_address(b as *const u8);
             let args_ptr = current_process.get_load_information().translate_virtual_to_physical_address(d as *const u8) as *const *const u8;
             let args_slice = slice::from_raw_parts(args_ptr, e);
@@ -79,18 +81,25 @@ pub unsafe fn syscall(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize
 
             execv(to_str(name_ptr as usize, c), &read_args(&args))
         },
-        SYS_STAT => {
+        FS_STAT => {
             let name_ptr = current_process.get_load_information().translate_virtual_to_physical_address(b as *const u8);
             let stat_ptr = current_process.get_load_information().translate_virtual_to_physical_address(d as *const u8);
             let child_node_count = e;
             stat(to_str(name_ptr as usize, c), stat_ptr as *mut u8, e)
         },
-        SYS_DIR_NAME => {
+        FS_DIR_NAME => {
             let parent_folder_ptr = current_process.get_load_information().translate_virtual_to_physical_address(b as *const u8);
             let read_buffer_ptr = current_process.get_load_information().translate_virtual_to_physical_address(d as *const u8);
             let read_buffer = slice::from_raw_parts_mut(read_buffer_ptr as *mut u8, e);
             let child_node_count = f;
             read_dir_name(to_str(parent_folder_ptr as usize, c), read_buffer, child_node_count)
+        },
+        PROC_INFO => {
+            let proc_info_ptr = current_process.get_load_information().translate_virtual_to_physical_address(b as *const u8);
+            proc_info(proc_info_ptr as *mut u8, c)
+        },
+        PROC_SIZE => {
+            proc_memory_size()
         },
         _ => UNDEFINED_SYSCALL
     }

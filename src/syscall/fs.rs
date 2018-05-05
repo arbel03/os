@@ -20,10 +20,10 @@ pub unsafe fn stat(directory_path: &str, stat_ptr: *mut u8, child_node: usize) -
 
     #[repr(packed)]
     pub struct Stat {
-        pub directory_name_length: usize,
-        pub directory_size: usize,
+        pub directory_name_length: u32,
+        pub directory_size: u32,
         pub is_folder: bool,
-        pub child_nodes_count: usize,
+        pub child_nodes_count: u32,
     }
 
     let parent_directory = if directory_path == "." {
@@ -42,17 +42,17 @@ pub unsafe fn stat(directory_path: &str, stat_ptr: *mut u8, child_node: usize) -
     };
     
     let mut stat = Stat {
-        directory_name_length: directory.get_name().len(),
-        directory_size: directory.get_size(),
+        directory_name_length: directory.get_name().len() as u32,
+        directory_size: directory.get_size() as u32,
         is_folder: directory.get_fat_dir().is_folder(),
         child_nodes_count: 0,
     };
 
     if directory.get_fat_dir().is_folder() {
         if directory.get_fat_dir().get_cluster() == 0 {
-            stat.child_nodes_count = child_dirs.len();
+            stat.child_nodes_count = child_dirs.len() as u32;
         } else {
-            stat.child_nodes_count = FILESYSTEM.as_mut().unwrap().get_child_directories(&directory).len();
+            stat.child_nodes_count = FILESYSTEM.as_mut().unwrap().get_child_directories(&directory).len() as u32;
         }
     }
     ptr::write(stat_ptr as *mut Stat, stat);

@@ -13,6 +13,7 @@ pub struct LoadInformation {
     pub argument_pointers_start: *const *const u8,
     pub arguments_count: usize,
     pub ldt_entries: Vec<SegmentDescriptor>,
+    load_request: LoadRequest,
 }
 
 impl LoadInformation {
@@ -26,6 +27,10 @@ impl LoadInformation {
 
     pub fn get_ldt_entries(&self) -> &Vec<SegmentDescriptor> {
         &self.ldt_entries
+    }
+
+    pub fn get_load_request(&self) -> &LoadRequest {
+        &self.load_request
     }
 }
 
@@ -98,15 +103,16 @@ pub(in super) unsafe fn load_process(process: &Process, args: &[&str], load_requ
         argument_pointers_start: pointers_start as *const *const u8,
         arguments_count: args.len(),
         ldt_entries: ldt_entries,
+        load_request: load_request,
     })
 }
 
 #[derive(Debug)]
 pub struct LoadRequest {
-    process_area_size: usize,
-    stack_area_size: usize,
-    arguments_count: usize,
-    arguments_area_size: usize,
+    pub process_area_size: usize,
+    pub stack_area_size: usize,
+    pub arguments_count: usize,
+    pub arguments_area_size: usize,
 }
 
 impl LoadRequest {

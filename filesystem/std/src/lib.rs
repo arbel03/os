@@ -17,8 +17,8 @@ pub mod syscalls;
 // Setting up heap
 use bitmap_allocator::BitmapAllocator;
 
-const HEAP_SIZE: usize = 1024*20;
-static mut HEAP_AREA: [u8;HEAP_SIZE] = [0u8;HEAP_SIZE];
+pub const HEAP_SIZE: usize = 1024*20;
+pub static mut HEAP_AREA: [u8;HEAP_SIZE] = [0u8;HEAP_SIZE];
 
 #[global_allocator]
 static mut HEAP: BitmapAllocator = BitmapAllocator::new(0, HEAP_SIZE, ::core::mem::size_of::<usize>());
@@ -42,23 +42,6 @@ unsafe fn exit() {
     asm!("int 0x82" :::: "intel");
 }
 
-// pub unsafe fn print_heap() {
-//     use bitmap_allocator::CellState;
-//     let allocator = &HEAP;
-//     println!("Printing bitmap:");
-//     let bitmap_size = allocator.get_block_count();
-//     for index in 0..bitmap_size {
-//         let block = allocator.get_cell(index).clone();
-//         let block_string = match block {
-//             CellState::Free => "_",
-//             CellState::Boundary => "<",
-//             CellState::Allocated => "=",
-//         };
-//         print!("{}", block_string);
-//     }
-//     print!("\n");
-// }
-
 #[lang = "eh_personality"] 
 extern fn eh_personality() {
 
@@ -67,5 +50,6 @@ extern fn eh_personality() {
 #[no_mangle]
 #[lang = "panic_fmt"]
 pub extern fn panic_fmt(_fmt: core::fmt::Arguments, _file: &'static str, _line: u32) -> ! {
-    loop {}
+    unsafe { exit(); }
+    loop {};
 }

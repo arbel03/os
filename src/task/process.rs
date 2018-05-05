@@ -27,15 +27,15 @@ pub struct CpuState {
     pub eip: u32, //1
     pub eflags: u32, //2
     pub cs: u32, //3
-    pub ds: u32,//4
-    pub ebp: u32,//5
-    pub esp: u32,//6
-    pub edi: u32,//7
-    pub esi: u32,//8
-    pub edx: u32,//9
-    pub ecx: u32,//10
-    pub ebx: u32,//11
-    pub eax: u32,//12
+    pub ds: u32, //4
+    pub ebp: u32, //5
+    pub esp: u32, //6
+    pub edi: u32, //7
+    pub esi: u32, //8
+    pub edx: u32, //9
+    pub ecx: u32, //10
+    pub ebx: u32, //11
+    pub eax: u32, //12
 }
 
 pub struct Process {

@@ -66,6 +66,10 @@ impl BitmapAllocator {
     pub fn get_block_count(&self) -> usize {
         return self.block_count;
     }
+
+    pub fn get_block_size(&self) -> usize {
+        return self.block_size;
+    }
 }
 
 unsafe impl<'a> Alloc for &'a BitmapAllocator {

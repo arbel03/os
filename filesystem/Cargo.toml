@@ -27,3 +27,7 @@ path = "ls.rs"
 [[bin]]
 name = "stat"
 path = "stat.rs"
+
+[[bin]]
+name = "ps"
+path = "ps.rs"

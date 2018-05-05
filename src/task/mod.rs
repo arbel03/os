@@ -6,10 +6,9 @@ use BitmapAllocator;
 use self::process::*;
 use self::loader::*;
 use memory::MemoryArea;
-use core::slice;
 use alloc::Vec;
 
-static mut PROCESS_ALLOCATOR: BitmapAllocator = BitmapAllocator::new(0x0, 0x0, 0x0);
+pub static mut PROCESS_ALLOCATOR: BitmapAllocator = BitmapAllocator::new(0x0, 0x0, 0x0);
 pub static mut PROCESS_LIST: Option<Vec<Process>> = None;
 
 pub fn init(free_memory_areas: Vec<MemoryArea>) {
@@ -45,6 +44,17 @@ pub fn get_current_process<'a>() -> &'a mut Process {
     unsafe {
         PROCESS_LIST.as_mut().unwrap().last_mut().unwrap()
     }
+}
+
+pub fn get_process_at_index<'a>(index: usize) -> Option<&'a Process> {
+    unsafe {
+        let processes = PROCESS_LIST.as_ref().unwrap();
+        if index >= processes.len() {
+            None
+        } else {
+            Some(&processes[index])
+        }
+    } 
 }
 
 pub fn get_parent_process<'a>() -> Option<&'a mut Process> {

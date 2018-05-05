@@ -1,5 +1,5 @@
 bin_target := i686-bin
-bin_names := shell cat ls stat
+bin_names := shell cat ls stat ps
 bin_files := $(patsubst %, filesystem/target/$(bin_target)/debug/%, $(bin_names))
 
 .PHONY: filesystem

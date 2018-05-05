@@ -12,7 +12,7 @@ use std::io;
 pub unsafe fn main(argc: usize, argv: *const *const u8) {
     let args = &std::args::get_args(argc, argv);
     if args.len() == 1 {
-        println!("Usage:\n\t{0} DIRECTORY_NAME\n\tDIRECTORY_NAME can be either a folder or a file.\n\t This command prints information about the given directory.", args[0]);
+        println!("Usage:\n\t{0} DIRECTORY_NAME\n\t\tDIRECTORY_NAME can be either a folder or a file.\n\t\t This command prints information about the given directory.", args[0]);
         return;
     }
     let stat = std::syscalls::stat(args[1], 0);

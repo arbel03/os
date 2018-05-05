@@ -30,7 +30,7 @@ pub fn main(argc: usize, argv: *const *const u8) {
     } else {
         println!("Printing contents of \"{}\":", file_name);
         let file_stat = std::syscalls::stat(file_name, 0);
-        let mut vector = vec![0u8;file_stat.directory_size];
+        let mut vector = vec![0u8;file_stat.directory_size as usize];
         std::syscalls::read(fd, &mut vector);
         println!("{}", unsafe { str::from_utf8_unchecked(&vector) });
     }
